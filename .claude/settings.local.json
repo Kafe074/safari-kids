@@ -1,0 +1,48 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mysql --user=root --password=0711 -e \"SHOW DATABASES;\")",
+      "Bash(mysql --user=root --password=0711 safari_kids -e \"SHOW TABLES;\")",
+      "Bash(mysql --version)",
+      "Read(//usr/**)",
+      "Bash(dpkg -l)",
+      "Bash(systemctl status *)",
+      "Bash(sudo systemctl status mysql)",
+      "Bash(sudo systemctl status mariadb)",
+      "Bash(docker --version)",
+      "Bash(mysql -u root -p0711 -e \"SHOW DATABASES;\")",
+      "Bash(mysql -u root -p0711 --protocol=TCP -e \"SHOW DATABASES;\")",
+      "Bash(./mvnw spring-boot:run)",
+      "Bash(echo \"PID: $!\")",
+      "Read(//tmp/**)",
+      "Bash(mvn --version)",
+      "Bash(java --version)",
+      "Bash(pkill -f \"spring-boot:run\")",
+      "Bash(pkill -f \"SafariKids\")",
+      "Bash(update-java-alternatives -l)",
+      "Bash(java -version)",
+      "Bash(/usr/lib/jvm/java-17-openjdk-amd64/bin/java -version)",
+      "Bash(JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 mvn spring-boot:run -f /home/kafe/Documentos/safari-kids_3/backend/pom.xml > /tmp/backend.log 2>&1 & *)",
+      "Bash(mysql -u root -p0711 safari_kids -e \"SELECT nombre FROM Rol; SELECT correo, nombres, apellidos FROM Usuario;\")",
+      "Bash(pkill -f \"SafariKidsApplication\")",
+      "Bash(JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 mvn spring-boot:run -f /home/kafe/Documentos/safari-kids_3/backend/pom.xml)",
+      "Bash(lsof -ti:8080)",
+      "Bash(kill -9 31515 31613)",
+      "Bash(kill -9 36350)",
+      "Bash(JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 mvn spring-boot:run)",
+      "Bash(MODEL_DIR=/home/kafe/Documentos/safari-kids_3/backend/src/main/java/com/safarikids/model *)",
+      "Bash(xargs cat)",
+      "Bash(gh auth *)",
+      "Bash(git --version)",
+      "Bash(git config *)",
+      "Bash(git init *)",
+      "Bash(git branch *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
+    ],
+    "additionalDirectories": [
+      "/tmp",
+      "/home/kafe/Documentos/safari-kids_3/backend/src/main/java/com/safarikids/model"
+    ]
+  }
+}

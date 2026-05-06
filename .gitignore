@@ -1,0 +1,21 @@
+# ── Frontend ─────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env
+
+# ── Backend ──────────────────────────────────
+backend/target/
+backend/.mvn/
+backend/*.log
+*.class
+
+# ── Sistema ──────────────────────────────────
+.DS_Store
+*.log
+.idea/
+*.iml
+.vscode/settings.json
+
+# ── Claude Code ──────────────────────────────
+.claude/

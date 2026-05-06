@@ -1,0 +1,21 @@
+# Copia este archivo como application.properties y completa tus valores
+
+server.port=8080
+
+spring.datasource.url=jdbc:mysql://localhost:3306/safari_kids?useSSL=false&serverTimezone=America/Lima&allowPublicKeyRetrieval=true
+spring.datasource.username=root
+spring.datasource.password=TU_PASSWORD_AQUI
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+app.jwt.secret=CambiarEsteSecretoPorUnoSeguro123456789!
+app.jwt.expiration=86400000
+
+app.cors.allowed-origins=http://localhost:5173
+
+logging.level.com.safarikids=DEBUG
+logging.level.org.springframework.security=INFO
