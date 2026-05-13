@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { ventasApi } from '../../api/ventas'
 import { Link, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import {
   LuCalendar, LuPackage, LuShoppingCart, LuArrowRight,
-  LuChevronDown, LuCircleCheck, LuArrowLeft,
+  LuChevronDown, LuCircleCheck, LuArrowLeft, LuDownload, LuPrinter,
 } from 'react-icons/lu'
 
 export default function MisCompras() {
@@ -19,7 +19,7 @@ export default function MisCompras() {
       style={{
         minHeight: '100vh',
         background: 'var(--paper, #FFFBF0)',
-        padding: '40px 24px 60px',
+        padding: '100px 24px 60px',
         fontFamily: "'Nunito', 'Segoe UI', sans-serif",
       }}
     >
@@ -152,6 +152,33 @@ export default function MisCompras() {
 
 function VentaCard({ venta }) {
   const [open, setOpen] = useState(false)
+  const [descargando, setDescargando] = useState(false)
+  const cardRef = useRef(null)
+
+  const handleDescargarPDF = async (e) => {
+    e.stopPropagation()
+    if (!cardRef.current) return
+    if (!open) setOpen(true)
+    setDescargando(true)
+    try {
+      const { default: html2canvas } = await import('html2canvas')
+      const { default: jsPDF }       = await import('jspdf')
+      await new Promise(r => setTimeout(r, 300))
+      const el      = cardRef.current
+      const canvas  = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#fff' })
+      const imgData = canvas.toDataURL('image/png')
+      const pdf     = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const pdfW    = pdf.internal.pageSize.getWidth()
+      const pdfH    = (canvas.height * pdfW) / canvas.width
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH)
+      const ref = `SK-${String(venta.idVenta).padStart(6, '0')}`
+      pdf.save(`boleta-${ref}.pdf`)
+    } catch {
+      window.print()
+    } finally {
+      setDescargando(false)
+    }
+  }
   const fecha = venta.fechaVenta
     ? new Date(venta.fechaVenta).toLocaleString('es-PE', {
         day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
@@ -162,6 +189,7 @@ function VentaCard({ venta }) {
 
   return (
     <div
+      ref={cardRef}
       className="card-chunky"
       style={{
         background: '#fff',
@@ -391,35 +419,24 @@ function VentaCard({ venta }) {
           </div>
 
           {/* total row */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginTop: 16,
-              paddingTop: 16,
-              borderTop: '2px solid #1A2E1A',
-            }}
-          >
-            <span
-              style={{
-                fontFamily: "'Fredoka One', cursive",
-                fontSize: 18,
-                color: '#1A2E1A',
-              }}
-            >
-              Total
-            </span>
-            <span
-              style={{
-                fontFamily: "'Fredoka One', cursive",
-                fontSize: 28,
-                color: '#1B7A3E',
-              }}
-            >
-              S/ {Number(venta.total).toFixed(2)}
-            </span>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:16, paddingTop:16, borderTop:'2px solid #1A2E1A' }}>
+            <span style={{ fontFamily:"'Fredoka One',cursive", fontSize:18, color:'#1A2E1A' }}>Total</span>
+            <span style={{ fontFamily:"'Fredoka One',cursive", fontSize:28, color:'#1B7A3E' }}>S/ {Number(venta.total).toFixed(2)}</span>
           </div>
+
+          {/* download button */}
+          <button
+            onClick={handleDescargarPDF}
+            disabled={descargando}
+            style={{
+              marginTop:16, width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+              background: descargando ? '#ccc' : '#1B7A3E', color:'#fff',
+              border:'3px solid #1A2E1A', borderRadius:12, padding:'10px',
+              fontFamily:"'Fredoka One',cursive", fontSize:15, cursor: descargando ? 'not-allowed' : 'pointer',
+              boxShadow: descargando ? 'none' : '4px 4px 0 #1A2E1A',
+            }}>
+            <LuDownload size={16} /> {descargando ? 'Generando PDF...' : 'Descargar boleta PDF'}
+          </button>
         </div>
       )}
     </div>

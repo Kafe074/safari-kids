@@ -38,7 +38,21 @@
       "Bash(git init *)",
       "Bash(git branch *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(mysql -u root -e \"SHOW DATABASES;\")",
+      "Bash(sudo service mysql status)",
+      "Bash(sudo mysql *)",
+      "Bash(mysql *)",
+      "Bash(javac -version)",
+      "Bash(update-alternatives --list java)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(k,'=',str\\(v\\)[:100]\\) for k,v in d.items\\(\\) if any\\(x in k.lower\\(\\) for x in ['mysql','password','cweijan','connect','host']\\)]\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(npx vite *)",
+      "Bash(node -e \"const icons = require\\('/home/kafe/Documentos/safari-kids_3/frontend/node_modules/react-icons/lu/index.mjs'\\); const names = ['LuCheckCircle','LuCircleCheck','LuBarChart2','LuChartBar','LuSparkles','LuSparkle','LuFlower','LuSeed','LuKey','LuZap','LuShield','LuShieldCheck','LuLeaf','LuTrophy','LuSmile','LuBaby','LuStore','LuShoppingBag','LuPalette','LuDatabase','LuCircleCheckBig']; names.forEach\\(n => { try { const m = require\\('/home/kafe/Documentos/safari-kids_3/frontend/node_modules/react-icons/lu'\\); console.log\\(n, m[n] ? 'OK' : 'MISSING'\\) } catch\\(e\\) { console.log\\(n, 'ERROR'\\) } }\\)\")",
+      "Bash(node --input-type=module)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(npm install *)"
     ],
     "additionalDirectories": [
       "/tmp",

@@ -5,8 +5,9 @@ import { useState } from 'react'
 import toast from 'react-hot-toast'
 import {
   LuShoppingCart, LuPackage, LuArrowLeft, LuPlus, LuMinus,
-  LuX, LuCreditCard, LuCircleCheck, LuTrash2,
+  LuX, LuCreditCard, LuCircleCheck, LuTrash2, LuDownload, LuPrinter,
 } from 'react-icons/lu'
+import { useRef } from 'react'
 
 const STEP = { CART: 'cart', PAYMENT: 'payment', PROCESSING: 'processing', BOLETA: 'boleta' }
 
@@ -381,8 +382,30 @@ function ProcessingScreen() {
 
 // ── Boleta ───────────────────────────────────────────────────────────────────
 function BoletaScreen({ boleta, onClose, onBackToStore }) {
-  const fecha = boleta?.fechaVenta ? new Date(boleta.fechaVenta).toLocaleString('es-PE') : ''
-  const ref   = `SK-${String(boleta?.idVenta ?? 0).padStart(6, '0')}`
+  const fecha      = boleta?.fechaVenta ? new Date(boleta.fechaVenta).toLocaleString('es-PE') : ''
+  const ref        = `SK-${String(boleta?.idVenta ?? 0).padStart(6, '0')}`
+  const boletaRef  = useRef(null)
+  const [descargando, setDescargando] = useState(false)
+
+  const handleDescargarPDF = async () => {
+    if (!boletaRef.current) return
+    setDescargando(true)
+    try {
+      const { default: html2canvas } = await import('html2canvas')
+      const { default: jsPDF }       = await import('jspdf')
+      const canvas  = await html2canvas(boletaRef.current, { scale: 2, useCORS: true, backgroundColor: '#fff' })
+      const imgData = canvas.toDataURL('image/png')
+      const pdf     = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const pdfW    = pdf.internal.pageSize.getWidth()
+      const pdfH    = (canvas.height * pdfW) / canvas.width
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH)
+      pdf.save(`boleta-${ref}.pdf`)
+    } catch (e) {
+      window.print()
+    } finally {
+      setDescargando(false)
+    }
+  }
 
   const handleImprimir = () => window.print()
 
@@ -392,7 +415,7 @@ function BoletaScreen({ boleta, onClose, onBackToStore }) {
       paddingTop: 90, fontFamily: "'Nunito', sans-serif",
     }}>
       <div style={{ maxWidth: 580, margin: '32px auto', padding: '0 24px' }}>
-        <div className="card-chunky" style={{ background: '#fff', overflow: 'hidden' }}>
+        <div ref={boletaRef} className="card-chunky" style={{ background: '#fff', overflow: 'hidden' }}>
 
           {/* Green header */}
           <div style={{
@@ -469,11 +492,14 @@ function BoletaScreen({ boleta, onClose, onBackToStore }) {
           </div>
 
           {/* Actions */}
-          <div style={{ padding: '0 32px 28px', display: 'flex', gap: 12 }}>
-            <button onClick={handleImprimir} className="btn btn-w" style={{ flex: 1 }}>
-              🖨 Imprimir
+          <div style={{ padding: '0 32px 28px', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <button onClick={handleImprimir} className="btn btn-w" style={{ flex: 1, display:'flex', alignItems:'center', gap:6, justifyContent:'center', minWidth:100 }}>
+              <LuPrinter size={16} /> Imprimir
             </button>
-            <button onClick={onClose} className="btn btn-g" style={{ flex: 2 }}>
+            <button onClick={handleDescargarPDF} disabled={descargando} className="btn btn-y" style={{ flex: 1, display:'flex', alignItems:'center', gap:6, justifyContent:'center', minWidth:100 }}>
+              <LuDownload size={16} /> {descargando ? 'Generando...' : 'Descargar PDF'}
+            </button>
+            <button onClick={onClose} className="btn btn-g" style={{ flex: 2, display:'flex', alignItems:'center', gap:6, justifyContent:'center', minWidth:140 }}>
               Ver mis compras
             </button>
           </div>

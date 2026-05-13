@@ -74,7 +74,7 @@ export default function MisReservas() {
       style={{
         minHeight: '100vh',
         background: 'var(--paper, #FFFBF0)',
-        padding: '40px 24px 60px',
+        padding: '100px 24px 60px',
         fontFamily: "'Nunito', 'Segoe UI', sans-serif",
       }}
     >
