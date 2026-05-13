@@ -8,6 +8,7 @@ import PageHeader from '../../components/common/PageHeader'
 import Modal from '../../components/common/Modal'
 import StatCard from '../../components/common/StatCard'
 import toast from 'react-hot-toast'
+import { LuStore, LuDollarSign, LuUsers, LuX, LuCircleCheck } from 'react-icons/lu'
 
 export default function ComprasPage() {
   const qc = useQueryClient()
@@ -51,15 +52,15 @@ export default function ComprasPage() {
 
       {tab === 'compras' && (
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:16,marginBottom:24}}>
-          <StatCard icon="🏪" label="Total Compras"   value={compras.length}       bg="#fff3e0" />
-          <StatCard icon="💰" label="Total Invertido" value={`S/ ${totalCompras.toFixed(2)}`} bg="#e8f5e9" />
-          <StatCard icon="🤝" label="Proveedores"     value={provs.length}          bg="#e3f2fd" />
+          <StatCard icon={<LuStore size={22} />} label="Total Compras"   value={compras.length}       bg="#fff3e0" />
+          <StatCard icon={<LuDollarSign size={22} />} label="Total Invertido" value={`S/ ${totalCompras.toFixed(2)}`} bg="#e8f5e9" />
+          <StatCard icon={<LuUsers size={22} />} label="Proveedores"     value={provs.length}          bg="#e3f2fd" />
         </div>
       )}
 
       {/* Tabs */}
       <div style={{display:'flex',gap:4,marginBottom:20,background:'#f5f5f5',padding:4,borderRadius:12,width:'fit-content'}}>
-        {[['compras','🏪 Compras'],['proveedores','🤝 Proveedores']].map(([key,label]) => (
+        {[['compras','Compras'],['proveedores','Proveedores']].map(([key,label]) => (
           <button key={key} onClick={()=>setTab(key)} style={{
             padding:'8px 20px',borderRadius:9,border:'none',cursor:'pointer',fontFamily:'inherit',
             background:tab===key?'#fff':'transparent',color:tab===key?'#2E7D32':'#888',
@@ -114,7 +115,7 @@ function CompraForm({ proveedores, onClose, onSaved }) {
         idProveedor: Number(idProveedor),
         items: validItems.map(i => ({ idProducto: Number(i.idProducto), cantidad: Number(i.cantidad), costoUnitario: Number(i.costoUnitario) })),
       })
-      toast.success('Compra registrada — inventario actualizado ✅')
+      toast.success('Compra registrada — inventario actualizado')
       onSaved()
     } catch { toast.error('Error al registrar la compra') }
     finally { setSaving(false) }
@@ -147,7 +148,9 @@ function CompraForm({ proveedores, onClose, onSaved }) {
               <input type="number" min="1" className="inp" style={{padding:'8px 10px'}} placeholder="Cant." value={it.cantidad} onChange={e=>updateItem(i,'cantidad',e.target.value)} />
               <input type="number" min="0" step="0.01" className="inp" style={{padding:'8px 10px'}} placeholder="Costo S/" value={it.costoUnitario} onChange={e=>updateItem(i,'costoUnitario',e.target.value)} />
               <button type="button" onClick={()=>removeItem(i)} disabled={items.length===1}
-                style={{background:'#ffebee',color:'#c62828',border:'none',borderRadius:8,padding:'8px',cursor:'pointer',fontSize:14,opacity:items.length===1?0.4:1}}>✕</button>
+                style={{background:'#ffebee',color:'#c62828',border:'none',borderRadius:8,padding:'8px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',opacity:items.length===1?0.4:1}}>
+                <LuX size={14} />
+              </button>
             </div>
           ))}
         </div>
@@ -162,7 +165,11 @@ function CompraForm({ proveedores, onClose, onSaved }) {
       <div style={{display:'flex',gap:10}}>
         <button className="btn btn-secondary" style={{flex:1}} onClick={onClose}>Cancelar</button>
         <button className="btn btn-primary" style={{flex:2}} onClick={handleSave} disabled={saving}>
-          {saving?'Registrando...':'✓ Registrar Compra'}
+          {saving ? 'Registrando...' : (
+            <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+              <LuCircleCheck size={16} /> Registrar Compra
+            </span>
+          )}
         </button>
       </div>
     </div>

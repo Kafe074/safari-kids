@@ -1,18 +1,20 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { reservasApi } from '../../api/reservas'
-import DataTable from '../../components/common/DataTable'
-import PageHeader from '../../components/common/PageHeader'
-import Modal from '../../components/common/Modal'
 import toast from 'react-hot-toast'
+import {
+  LuPlus, LuPencil, LuTrash2, LuSearch, LuCalendar, LuFilter, LuX, LuCircleCheck,
+} from 'react-icons/lu'
 
-const ESTADO_COLORS = { Pendiente:'warn', Confirmado:'ok', Cancelado:'err' }
+const ESTADO_COLORS = { Pendiente: 'warn', Confirmado: 'ok', Cancelado: 'err' }
+const ESTADOS = ['Todos', 'Pendiente', 'Confirmado', 'Cancelado']
 
 export default function ReservasPage() {
   const qc = useQueryClient()
   const [modal, setModal] = useState(false)
   const [editing, setEditing] = useState(null)
   const [filterEstado, setFilterEstado] = useState('Todos')
+  const [search, setSearch] = useState('')
 
   const { data, isLoading } = useQuery({
     queryKey: ['reservas'],
@@ -25,37 +27,176 @@ export default function ReservasPage() {
     onError: () => toast.error('Error al eliminar'),
   })
 
-  const filtered = (data ?? []).filter(r => filterEstado === 'Todos' || r.estado === filterEstado)
+  const openNew = () => { setEditing(null); setModal(true) }
+  const openEdit = row => { setEditing(row); setModal(true) }
+  const closeModal = () => setModal(false)
 
-  const cols = [
-    { key:'idReserva', label:'#' },
-    { key:'fechaReserva', label:'Fecha' },
-    { key:'estado', label:'Estado', render: v => <span className={`badge badge-${ESTADO_COLORS[v] ?? 'info'}`}>{v}</span> },
-    { key:'observaciones', label:'Observaciones' },
-  ]
+  const filtered = (data ?? []).filter(r => {
+    const matchEstado = filterEstado === 'Todos' || r.estado === filterEstado
+    const q = search.toLowerCase()
+    const matchSearch = !q || String(r.idReserva ?? '').includes(q)
+      || String(r.fechaReserva ?? '').toLowerCase().includes(q)
+      || String(r.observaciones ?? '').toLowerCase().includes(q)
+    return matchEstado && matchSearch
+  })
 
   return (
-    <div>
-      <PageHeader title="Gestión de Reservas" subtitle="Administra todas las reservas del salón">
-        <select className="inp" style={{ width:160 }} value={filterEstado} onChange={e=>setFilterEstado(e.target.value)}>
-          {['Todos','Pendiente','Confirmado','Cancelado'].map(e => <option key={e}>{e}</option>)}
-        </select>
-        <button className="btn btn-primary" onClick={()=>{setEditing(null);setModal(true)}}>+ Nueva Reserva</button>
-      </PageHeader>
+    <div style={{ padding: '32px 28px', minHeight: '100vh', background: '#F8FDF8' }}>
 
-      <DataTable columns={cols} data={filtered} loading={isLoading}
-        onEdit={row=>{setEditing(row);setModal(true)}}
-        onDelete={row=>{ if(confirm('¿Eliminar esta reserva?')) deleteMut.mutate(row.idReserva) }} />
+      {/* ── Page Header ── */}
+      <div style={{ marginBottom: 32 }}>
+        <span className="section-tag" style={{ color: 'var(--green)', borderColor: 'var(--green)', background: '#e8f5e9', transform: 'rotate(-1.5deg)' }}>
+          Admin
+        </span>
+        <h1 className="section-title" style={{ fontSize: 'clamp(28px, 4vw, 44px)', marginTop: 14, marginBottom: 6 }}>
+          Gestión de Reservas
+        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 14, color: '#666', fontWeight: 400 }}>
+            Administra todas las reservas del salón
+          </p>
+          <button
+            className="btn btn-g"
+            style={{ padding: '10px 22px', fontSize: 15, gap: 8 }}
+            onClick={openNew}
+          >
+            <LuPlus size={18} /> Nueva Reserva
+          </button>
+        </div>
+      </div>
 
-      <Modal open={modal} onClose={()=>setModal(false)} title={editing ? 'Editar Reserva' : 'Nueva Reserva'}>
-        <ReservaForm initial={editing} onClose={()=>setModal(false)} onSaved={()=>{qc.invalidateQueries(['reservas']);setModal(false)}} />
-      </Modal>
+      {/* ── Filter / Search bar ── */}
+      <div className="card-chunky" style={{ padding: '18px 22px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 180 }}>
+          <LuSearch size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#aaa' }} />
+          <input
+            className="inp"
+            placeholder="Buscar reservas..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ paddingLeft: 36 }}
+          />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <LuFilter size={15} style={{ color: '#888' }} />
+          {ESTADOS.map(e => (
+            <button
+              key={e}
+              onClick={() => setFilterEstado(e)}
+              style={{
+                padding: '6px 14px', borderRadius: 999, fontSize: 13, fontFamily: "'Poppins', sans-serif",
+                fontWeight: 700, border: '2px solid var(--ink)', cursor: 'pointer', transition: 'all .15s',
+                background: filterEstado === e ? 'var(--ink)' : '#fff',
+                color: filterEstado === e ? '#fff' : 'var(--ink)',
+              }}
+            >
+              {e}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Data Table ── */}
+      <div className="card-chunky" style={{ overflow: 'hidden' }}>
+        {isLoading ? (
+          <div style={{ padding: 64, textAlign: 'center', color: '#aaa' }}>
+            <LuCalendar size={40} style={{ marginBottom: 12, opacity: .4 }} />
+            <p style={{ fontFamily: "'Poppins', sans-serif" }}>Cargando reservas...</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div style={{ padding: 64, textAlign: 'center', color: '#aaa' }}>
+            <LuCalendar size={40} style={{ marginBottom: 12, opacity: .4 }} />
+            <p style={{ fontFamily: "'Poppins', sans-serif" }}>No se encontraron reservas</p>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Fecha</th>
+                  <th>Estado</th>
+                  <th>Observaciones</th>
+                  <th style={{ textAlign: 'right' }}>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((r, i) => (
+                  <tr key={i}>
+                    <td>
+                      <span style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 700, color: 'var(--green)' }}>
+                        #{r.idReserva}
+                      </span>
+                    </td>
+                    <td style={{ fontFamily: "'Poppins', sans-serif" }}>{r.fechaReserva ?? '—'}</td>
+                    <td>
+                      <span className={`badge badge-${ESTADO_COLORS[r.estado] ?? 'info'}`}>{r.estado}</span>
+                    </td>
+                    <td style={{ fontFamily: "'Poppins', sans-serif", color: '#666', maxWidth: 260 }}>
+                      {r.observaciones ?? '—'}
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                        <button
+                          className="btn btn-secondary"
+                          style={{ padding: '5px 12px', fontSize: 12, gap: 5 }}
+                          onClick={() => openEdit(r)}
+                        >
+                          <LuPencil size={13} /> Editar
+                        </button>
+                        <button
+                          className="btn btn-danger"
+                          style={{ padding: '5px 12px', fontSize: 12, gap: 5 }}
+                          onClick={() => { if (confirm('¿Eliminar esta reserva?')) deleteMut.mutate(r.idReserva) }}
+                        >
+                          <LuTrash2 size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div style={{ padding: '10px 16px', background: '#fafafa', borderTop: '1px solid #f0f0f0', fontSize: 12, color: '#aaa', fontFamily: "'Poppins', sans-serif" }}>
+          {filtered.length} reserva(s){search || filterEstado !== 'Todos' ? ' (filtradas)' : ''}
+        </div>
+      </div>
+
+      {/* ── Modal ── */}
+      {modal && (
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) closeModal() }}>
+          <div className="modal-box" style={{ maxWidth: 520 }}>
+            <div className="modal-header">
+              <h2 style={{ fontFamily: "'Fredoka One', cursive", fontSize: 22, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <LuCalendar size={20} color="var(--green)" />
+                {editing ? 'Editar Reserva' : 'Nueva Reserva'}
+              </h2>
+              <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', display: 'flex', alignItems: 'center' }}>
+                <LuX size={22} />
+              </button>
+            </div>
+            <div style={{ padding: '20px 28px 28px' }}>
+              <ReservaForm
+                initial={editing}
+                onClose={closeModal}
+                onSaved={() => { qc.invalidateQueries(['reservas']); closeModal() }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 function ReservaForm({ initial, onClose, onSaved }) {
-  const [form, setForm] = useState({ fechaReserva: initial?.fechaReserva ?? '', estado: initial?.estado ?? 'Pendiente', observaciones: initial?.observaciones ?? '' })
+  const [form, setForm] = useState({
+    fechaReserva: initial?.fechaReserva ?? '',
+    estado: initial?.estado ?? 'Pendiente',
+    observaciones: initial?.observaciones ?? '',
+  })
   const f = k => e => setForm(p => ({ ...p, [k]: e.target.value }))
 
   const handleSave = async () => {
@@ -68,17 +209,28 @@ function ReservaForm({ initial, onClose, onSaved }) {
   }
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-      <div><label className="inp-label">Fecha de Reserva</label><input type="date" className="inp" value={form.fechaReserva} onChange={f('fechaReserva')} /></div>
-      <div><label className="inp-label">Estado</label>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div>
+        <label className="inp-label">Fecha de Reserva</label>
+        <input type="date" className="inp" value={form.fechaReserva} onChange={f('fechaReserva')} />
+      </div>
+      <div>
+        <label className="inp-label">Estado</label>
         <select className="inp" value={form.estado} onChange={f('estado')}>
-          {['Pendiente','Confirmado','Cancelado'].map(e=><option key={e}>{e}</option>)}
+          {['Pendiente', 'Confirmado', 'Cancelado'].map(e => <option key={e}>{e}</option>)}
         </select>
       </div>
-      <div><label className="inp-label">Observaciones</label><textarea className="inp" rows={3} value={form.observaciones} onChange={f('observaciones')} /></div>
-      <div style={{ display:'flex', gap:10, marginTop:8 }}>
-        <button className="btn btn-secondary" style={{ flex:1 }} onClick={onClose}>Cancelar</button>
-        <button className="btn btn-primary" style={{ flex:2 }} onClick={handleSave}>Guardar reserva</button>
+      <div>
+        <label className="inp-label">Observaciones</label>
+        <textarea className="inp" rows={3} value={form.observaciones} onChange={f('observaciones')} />
+      </div>
+      <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+        <button className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>
+          Cancelar
+        </button>
+        <button className="btn btn-primary" style={{ flex: 2, gap: 8 }} onClick={handleSave}>
+          <LuCircleCheck size={16} /> Guardar reserva
+        </button>
       </div>
     </div>
   )

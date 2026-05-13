@@ -116,6 +116,8 @@ public class ReservaController {
         Asiento asiento = asientoRepo.findAll().stream()
             .filter(a -> a.getEstado() == Asiento.EstadoAsiento.Disponible)
             .findFirst().orElseThrow(() -> new RuntimeException("Sin asientos disponibles"));
+        asiento.setEstado(Asiento.EstadoAsiento.Ocupado);
+        asientoRepo.save(asiento);
 
         Reserva reserva = Reserva.builder()
             .cliente(cliente)

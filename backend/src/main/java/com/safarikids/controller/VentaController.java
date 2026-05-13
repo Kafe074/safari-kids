@@ -7,10 +7,13 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/ventas")
@@ -35,8 +38,43 @@ public class VentaController {
             .orElse(ResponseEntity.notFound().build());
     }
 
+    @Transactional(readOnly = true)
+    @GetMapping("/mis-compras")
+    public ResponseEntity<ApiResponse<List<VentaResumen>>> misCompras() {
+        String correo = SecurityContextHolder.getContext().getAuthentication().getName();
+        return usuarioRepo.findByCorreo(correo)
+            .flatMap(u -> clienteRepo.findByUsuarioIdUsuario(u.getIdUsuario()))
+            .map(cliente -> {
+                List<VentaResumen> resumen = repository
+                    .findByClienteIdClienteOrderByFechaVentaDesc(cliente.getIdCliente())
+                    .stream()
+                    .map(v -> {
+                        List<DetalleItem> detalles = detalleRepo.findByVentaIdVenta(v.getIdVenta())
+                            .stream()
+                            .map(d -> new DetalleItem(
+                                d.getProducto().getNombre(),
+                                d.getCantidad(),
+                                d.getPrecioUnitario(),
+                                d.getSubtotal()
+                            ))
+                            .collect(Collectors.toList());
+                        return new VentaResumen(v.getIdVenta(), v.getFechaVenta(), v.getTotal(), v.getEstado().name(), detalles);
+                    })
+                    .collect(Collectors.toList());
+                return ResponseEntity.ok(ApiResponse.ok(resumen));
+            })
+            .orElse(ResponseEntity.ok(ApiResponse.ok(List.of())));
+    }
+
+    @Transactional(readOnly = true)
+    @GetMapping("/{id}/detalles")
+    public ResponseEntity<ApiResponse<List<DetalleVenta>>> getDetalles(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.ok(detalleRepo.findByVentaIdVenta(id)));
+    }
+
+    @Transactional
     @PostMapping("/checkout")
-    public ResponseEntity<ApiResponse<Integer>> checkout(@RequestBody CheckoutRequest req) {
+    public ResponseEntity<ApiResponse<VentaResumen>> checkout(@RequestBody CheckoutRequest req) {
         String correo = SecurityContextHolder.getContext().getAuthentication().getName();
         Cliente cliente = usuarioRepo.findByCorreo(correo)
             .flatMap(u -> clienteRepo.findByUsuarioIdUsuario(u.getIdUsuario()))
@@ -56,8 +94,8 @@ public class VentaController {
             .build();
         repository.save(venta);
 
-        for (CheckoutRequest.Item item : req.getItems()) {
-            productoRepo.findById(item.getIdProducto()).ifPresent(producto -> {
+        List<DetalleItem> detallesResponse = req.getItems().stream()
+            .flatMap(item -> productoRepo.findById(item.getIdProducto()).stream().map(producto -> {
                 DetalleVenta detalle = DetalleVenta.builder()
                     .venta(venta)
                     .producto(producto)
@@ -66,10 +104,13 @@ public class VentaController {
                     .subtotal(producto.getPrecioVenta().multiply(BigDecimal.valueOf(item.getCantidad())))
                     .build();
                 detalleRepo.save(detalle);
-            });
-        }
+                return new DetalleItem(producto.getNombre(), item.getCantidad(), producto.getPrecioVenta(), detalle.getSubtotal());
+            }))
+            .collect(Collectors.toList());
 
-        return ResponseEntity.ok(ApiResponse.ok("Compra realizada con éxito", venta.getIdVenta()));
+        VentaResumen resumen = new VentaResumen(
+            venta.getIdVenta(), venta.getFechaVenta(), venta.getTotal(), venta.getEstado().name(), detallesResponse);
+        return ResponseEntity.ok(ApiResponse.ok("Compra realizada con éxito", resumen));
     }
 
     @PostMapping
@@ -90,6 +131,8 @@ public class VentaController {
         return ResponseEntity.ok(ApiResponse.ok("Eliminado", null));
     }
 
+    // ── DTOs ──────────────────────────────────────────────────────────────────
+
     @Data
     public static class CheckoutRequest {
         private List<Item> items;
@@ -99,5 +142,22 @@ public class VentaController {
             private Integer idProducto;
             private Integer cantidad;
         }
+    }
+
+    @Data
+    public static class VentaResumen {
+        private final Integer idVenta;
+        private final LocalDateTime fechaVenta;
+        private final BigDecimal total;
+        private final String estado;
+        private final List<DetalleItem> detalles;
+    }
+
+    @Data
+    public static class DetalleItem {
+        private final String nombreProducto;
+        private final Integer cantidad;
+        private final BigDecimal precioUnitario;
+        private final BigDecimal subtotal;
     }
 }

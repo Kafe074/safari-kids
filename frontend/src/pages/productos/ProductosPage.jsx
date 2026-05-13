@@ -8,6 +8,7 @@ import PageHeader from '../../components/common/PageHeader'
 import Modal from '../../components/common/Modal'
 import StatCard from '../../components/common/StatCard'
 import toast from 'react-hot-toast'
+import { LuBox, LuCircleCheck, LuX, LuTag, LuTriangleAlert } from 'react-icons/lu'
 
 export default function ProductosPage() {
   const qc = useQueryClient()
@@ -70,8 +71,8 @@ export default function ProductosPage() {
         if (!inv) return <span style={{ color:'#ccc' }}>—</span>
         const low = inv.stockActual <= (inv.stockMinimo ?? 5)
         return (
-          <span style={{ fontWeight:700, color: low ? '#e53935' : '#2E7D32', background: low ? '#ffebee' : '#e8f5e9', borderRadius:20, padding:'3px 10px', fontSize:12 }}>
-            {inv.stockActual} ud{low ? ' ⚠️' : ''}
+          <span style={{ fontWeight:700, color: low ? '#e53935' : '#2E7D32', background: low ? '#ffebee' : '#e8f5e9', borderRadius:20, padding:'3px 10px', fontSize:12, display:'inline-flex', alignItems:'center', gap:4 }}>
+            {inv.stockActual} ud{low ? <LuTriangleAlert size={11} /> : ''}
           </span>
         )
       }},
@@ -84,15 +85,17 @@ export default function ProductosPage() {
   return (
     <div>
       <PageHeader title="Productos" subtitle="Gestión de productos y categorías">
-        <button className="btn btn-secondary" onClick={() => setModalCat(true)}>🏷️ Categorías</button>
+        <button className="btn btn-secondary" onClick={() => setModalCat(true)} style={{display:'flex',alignItems:'center',gap:6}}>
+          <LuTag size={15} /> Categorías
+        </button>
         <button className="btn btn-primary"   onClick={openNew}>+ Nuevo Producto</button>
       </PageHeader>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 16, marginBottom: 24 }}>
-        <StatCard icon="📦" label="Total Productos" value={productos.length} bg="#e0f7fa" />
-        <StatCard icon="✅" label="Activos"          value={activos.length}   bg="#e8f5e9" />
-        <StatCard icon="⛔" label="Inactivos"        value={inactivos.length} bg="#fce4ec" />
-        <StatCard icon="🏷️" label="Categorías"      value={categorias.length} bg="#f3e5f5" />
+        <StatCard icon={<LuBox size={22} />}         label="Total Productos" value={productos.length} bg="#e0f7fa" />
+        <StatCard icon={<LuCircleCheck size={22} />} label="Activos"          value={activos.length}   bg="#e8f5e9" />
+        <StatCard icon={<LuX size={22} />}           label="Inactivos"        value={inactivos.length} bg="#fce4ec" />
+        <StatCard icon={<LuTag size={22} />}         label="Categorías"      value={categorias.length} bg="#f3e5f5" />
       </div>
 
       {/* Filtro por categoría */}

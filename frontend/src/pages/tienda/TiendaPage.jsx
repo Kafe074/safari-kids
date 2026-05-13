@@ -5,16 +5,31 @@ import { useAuth } from '../../context/AuthContext'
 import { useCart } from '../../context/CartContext'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
+import {
+  LuShoppingCart, LuPackage, LuSearch, LuArrowLeft, LuPlus, LuTag,
+} from 'react-icons/lu'
 
-const CAT_ICONS  = { 'Shampoo & Acondicionador':'🧴', 'Estilizado':'💇', 'Tratamientos':'✨', 'Accesorios':'🎀' }
-const CAT_COLORS = { 'Shampoo & Acondicionador':'#e3f2fd', 'Estilizado':'#f3e5f5', 'Tratamientos':'#e8f5e9', 'Accesorios':'#fff8e1' }
+const CAT_ICONS   = { 'Shampoo & Acondicionador':'🧴', 'Estilizado':'💇', 'Tratamientos':'✨', 'Accesorios':'🎀' }
+const CAT_ACCENT  = {
+  'Shampoo & Acondicionador': 'var(--sky)',
+  'Estilizado':                'var(--purple)',
+  'Tratamientos':              'var(--green)',
+  'Accesorios':                'var(--pink)',
+  'Todos':                     'var(--yellow)',
+}
+const CAT_BG = {
+  'Shampoo & Acondicionador': '#e0f2fe',
+  'Estilizado':                '#f3e8ff',
+  'Tratamientos':              '#dcfce7',
+  'Accesorios':                '#ffe4f0',
+}
 
 export default function TiendaPage() {
-  const { user } = useAuth()
-  const { add, count } = useCart()
-  const navigate = useNavigate()
+  const { user }           = useAuth()
+  const { add, count }     = useCart()
+  const navigate           = useNavigate()
   const [catActiva, setCatActiva] = useState('Todos')
-  const [search, setSearch] = useState('')
+  const [search, setSearch]       = useState('')
 
   const { data: productos = [], isLoading } = useQuery({
     queryKey: ['productos-public'],
@@ -41,95 +56,238 @@ export default function TiendaPage() {
   }
 
   return (
-    <div style={{ minHeight:'100vh', background:'#f5f0e8', paddingTop:90, fontFamily:"'Nunito',sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: 'var(--paper)', paddingTop: 90, fontFamily: "'Nunito', sans-serif" }}>
 
-      {/* Header */}
-      <div style={{ background:'linear-gradient(135deg,#1b5e20,#2E7D32)', padding:'60px 24px 50px', textAlign:'center', position:'relative', overflow:'hidden' }}>
-        {['🧴','✨','🎀','💇','🌿','⭐'].map((e,i) => (
-          <div key={i} style={{ position:'absolute', left:`${i*18+5}%`, top:`${20+i*10}%`, fontSize:24, opacity:.1, animation:`floatSlow ${5+i}s ease-in-out ${i*.4}s infinite` }}>{e}</div>
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <div style={{
+        background: 'var(--ink)',
+        padding: '56px 24px 48px',
+        textAlign: 'center',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        {/* decorative dots */}
+        {[...Array(6)].map((_, i) => (
+          <div key={i} style={{
+            position: 'absolute',
+            width: 18, height: 18,
+            borderRadius: '50%',
+            background: ['var(--yellow)','var(--pink)','var(--sky)','var(--purple)','var(--orange)','var(--green)'][i],
+            left: `${i * 18 + 4}%`,
+            top: `${15 + (i % 3) * 25}%`,
+            opacity: 0.35,
+          }} />
         ))}
-        <h1 style={{ fontFamily:"'Fredoka One',cursive", fontSize:'clamp(32px,5vw,52px)', color:'#fff', margin:'0 0 12px' }}>
-          Tienda Safari Kids 🛍️
+
+        {/* back button */}
+        <button
+          onClick={() => navigate('/')}
+          className="btn btn-y"
+          style={{
+            position: 'absolute', top: 20, left: 20,
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '8px 16px', fontSize: 13,
+          }}
+        >
+          <LuArrowLeft size={16} /> Inicio
+        </button>
+
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+          <span className="sticker" style={{ background: 'var(--yellow)', fontSize: 13 }}>🛍️ Tienda</span>
+        </div>
+
+        <h1 style={{
+          fontFamily: "'Fredoka One', cursive",
+          fontSize: 'clamp(30px, 5vw, 52px)',
+          color: '#fff',
+          margin: '0 0 10px',
+          lineHeight: 1.1,
+        }}>
+          Tienda Safari Kids
         </h1>
-        <p style={{ color:'rgba(255,255,255,.85)', fontSize:16, maxWidth:480, margin:'0 auto 28px' }}>
-          Productos seleccionados para el cabello de tu peque
+        <p style={{
+          fontFamily: "'Caveat', cursive",
+          fontSize: 22,
+          color: 'var(--yellow)',
+          margin: '0 0 28px',
+        }}>
+          Productos seleccionados para el cabello de tu peque ✨
         </p>
-        <div style={{ maxWidth:380, margin:'0 auto', display:'flex', gap:12, alignItems:'center' }}>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Buscar producto..."
-            style={{ flex:1, padding:'12px 18px', borderRadius:12, border:'none', fontSize:14, outline:'none', fontFamily:'inherit' }} />
-          {count > 0 && (
-            <button onClick={() => navigate('/carrito')} style={{
-              background:'#F9A825', color:'#fff', border:'none', borderRadius:12,
-              padding:'12px 18px', fontWeight:800, fontSize:14, cursor:'pointer', fontFamily:'inherit',
-              display:'flex', alignItems:'center', gap:6, whiteSpace:'nowrap',
-            }}>
-              🛒 {count}
-            </button>
-          )}
+
+        {/* search + cart row */}
+        <div style={{ maxWidth: 440, margin: '0 auto', display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div style={{
+            flex: 1,
+            display: 'flex', alignItems: 'center', gap: 10,
+            background: '#fff',
+            border: '4px solid var(--ink)',
+            borderRadius: 16,
+            padding: '10px 16px',
+            boxShadow: '4px 4px 0 var(--yellow)',
+          }}>
+            <LuSearch size={18} color="var(--ink)" style={{ flexShrink: 0 }} />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Buscar producto..."
+              style={{
+                flex: 1, border: 'none', outline: 'none',
+                fontSize: 14, fontFamily: 'inherit', background: 'transparent',
+                color: 'var(--ink)',
+              }}
+            />
+          </div>
+
+          <button
+            onClick={() => navigate('/carrito')}
+            className="btn btn-y"
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 18px', flexShrink: 0, position: 'relative' }}
+          >
+            <LuShoppingCart size={20} />
+            {count > 0 && (
+              <span style={{
+                background: 'var(--pink)', color: '#fff',
+                borderRadius: '50%', width: 20, height: 20,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 11, fontWeight: 800,
+                border: '2px solid var(--ink)',
+              }}>
+                {count}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
-      <div style={{ maxWidth:1200, margin:'0 auto', padding:'40px 24px' }}>
+      {/* ── Content ──────────────────────────────────────────────────────── */}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px' }}>
 
-        {/* Filtros */}
-        <div style={{ display:'flex', gap:10, flexWrap:'wrap', marginBottom:32 }}>
-          {['Todos', ...categorias.map(c => c.nombre)].map(cat => (
-            <button key={cat} onClick={() => setCatActiva(cat)} style={{
-              padding:'8px 20px', borderRadius:24, border:'1.5px solid', fontSize:14, fontWeight:700, cursor:'pointer', transition:'all .2s',
-              background: catActiva===cat ? '#2E7D32' : '#fff',
-              color: catActiva===cat ? '#fff' : '#2E7D32', borderColor:'#2E7D32',
-            }}>
-              {CAT_ICONS[cat] || '🌿'} {cat}
-            </button>
-          ))}
+        {/* Category filters */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 36 }}>
+          {['Todos', ...categorias.map(c => c.nombre)].map(cat => {
+            const isActive = catActiva === cat
+            const accent   = CAT_ACCENT[cat] || 'var(--green)'
+            return (
+              <button
+                key={cat}
+                onClick={() => setCatActiva(cat)}
+                style={{
+                  padding: '9px 22px',
+                  borderRadius: 50,
+                  border: `4px solid var(--ink)`,
+                  fontSize: 14,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  transition: 'all .15s',
+                  fontFamily: 'inherit',
+                  background: isActive ? accent : '#fff',
+                  color: isActive ? (cat === 'Accesorios' || cat === 'Todos' ? 'var(--ink)' : '#fff') : 'var(--ink)',
+                  boxShadow: isActive ? '3px 3px 0 var(--ink)' : 'none',
+                  transform: isActive ? 'translate(-1px,-1px)' : 'none',
+                }}
+              >
+                {CAT_ICONS[cat] || '🌿'} {cat}
+              </button>
+            )
+          })}
         </div>
 
+        {/* States */}
         {isLoading ? (
-          <div style={{ textAlign:'center', padding:60, color:'#aaa' }}>
-            <div style={{ fontSize:40, marginBottom:12 }}>🦁</div>
-            <p>Cargando productos...</p>
+          <div style={{ textAlign: 'center', padding: 60 }}>
+            <div className="card-chunky" style={{ display: 'inline-block', padding: '40px 60px', background: '#fff' }}>
+              <LuPackage size={56} color="var(--green)" style={{ marginBottom: 16 }} />
+              <p style={{ fontFamily: "'Fredoka One', cursive", fontSize: 22, color: 'var(--ink)', margin: 0 }}>
+                Cargando productos...
+              </p>
+            </div>
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ textAlign:'center', padding:60, color:'#aaa' }}>
-            <div style={{ fontSize:40, marginBottom:12 }}>📭</div>
-            <p>No se encontraron productos</p>
+          <div style={{ textAlign: 'center', padding: 60 }}>
+            <div className="card-chunky" style={{ display: 'inline-block', padding: '40px 60px', background: '#fff' }}>
+              <LuPackage size={56} color="var(--orange)" style={{ marginBottom: 16 }} />
+              <p style={{ fontFamily: "'Fredoka One', cursive", fontSize: 22, color: 'var(--ink)', margin: 0 }}>
+                No se encontraron productos
+              </p>
+            </div>
           </div>
         ) : (
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 24 }}>
             {filtered.map(p => {
-              const bg = CAT_COLORS[p.categoria?.nombre] || '#f0f7f0'
-              const icon = CAT_ICONS[p.categoria?.nombre] || '📦'
+              const topBg  = CAT_BG[p.categoria?.nombre] || '#f0fdf4'
+              const icon   = CAT_ICONS[p.categoria?.nombre] || '📦'
               return (
-                <div key={p.idProducto} style={{
-                  background:'#fff', borderRadius:20, overflow:'hidden',
-                  boxShadow:'0 2px 12px rgba(0,0,0,.06)', border:'1px solid #f0f0f0',
-                  display:'flex', flexDirection:'column', transition:'transform .2s, box-shadow .2s',
-                }}
-                onMouseOver={e => { e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 10px 32px rgba(0,0,0,.12)' }}
-                onMouseOut={e  => { e.currentTarget.style.transform='translateY(0)';    e.currentTarget.style.boxShadow='0 2px 12px rgba(0,0,0,.06)' }}>
-                  <div style={{ background:bg, height:140, display:'flex', alignItems:'center', justifyContent:'center', fontSize:60 }}>
+                <div
+                  key={p.idProducto}
+                  className="card-chunky"
+                  style={{
+                    background: '#fff',
+                    display: 'flex', flexDirection: 'column',
+                    overflow: 'hidden',
+                    transition: 'transform .15s, box-shadow .15s',
+                    cursor: 'default',
+                  }}
+                  onMouseOver={e => {
+                    e.currentTarget.style.transform  = 'translate(-3px,-3px)'
+                    e.currentTarget.style.boxShadow  = '11px 11px 0 var(--ink)'
+                  }}
+                  onMouseOut={e => {
+                    e.currentTarget.style.transform  = 'translate(0,0)'
+                    e.currentTarget.style.boxShadow  = '8px 8px 0 var(--ink)'
+                  }}
+                >
+                  {/* colored top */}
+                  <div style={{
+                    background: topBg,
+                    height: 140,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 60,
+                    borderBottom: '4px solid var(--ink)',
+                  }}>
                     {icon}
                   </div>
-                  <div style={{ padding:'18px 20px', flex:1, display:'flex', flexDirection:'column' }}>
+
+                  <div style={{ padding: '18px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     {p.categoria && (
-                      <span style={{ fontSize:11, fontWeight:700, color:'#2E7D32', textTransform:'uppercase', letterSpacing:.5, marginBottom:6 }}>
-                        {p.categoria.nombre}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6 }}>
+                        <LuTag size={11} color="var(--green)" />
+                        <span style={{
+                          fontSize: 10, fontWeight: 800, color: 'var(--green)',
+                          textTransform: 'uppercase', letterSpacing: 0.8,
+                        }}>
+                          {p.categoria.nombre}
+                        </span>
+                      </div>
                     )}
-                    <p style={{ fontWeight:800, fontSize:15, color:'#1a2e1a', margin:'0 0 6px', lineHeight:1.3 }}>{p.nombre}</p>
-                    {p.descripcion && <p style={{ fontSize:12, color:'#888', margin:'0 0 14px', lineHeight:1.5, flex:1 }}>{p.descripcion}</p>}
-                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:'auto' }}>
-                      <span style={{ fontFamily:"'Fredoka One',cursive", fontSize:22, color:'#2E7D32' }}>
+
+                    <p style={{
+                      fontFamily: "'Fredoka One', cursive",
+                      fontSize: 17, color: 'var(--ink)',
+                      margin: '0 0 6px', lineHeight: 1.25,
+                    }}>
+                      {p.nombre}
+                    </p>
+
+                    {p.descripcion && (
+                      <p style={{ fontSize: 12, color: '#666', margin: '0 0 14px', lineHeight: 1.5, flex: 1 }}>
+                        {p.descripcion}
+                      </p>
+                    )}
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
+                      <span style={{
+                        fontFamily: "'Fredoka One', cursive",
+                        fontSize: 24, color: 'var(--green)',
+                      }}>
                         S/ {Number(p.precioVenta).toFixed(2)}
                       </span>
-                      <button onClick={() => handleAgregar(p)} style={{
-                        background:'#2E7D32', color:'#fff', border:'none', borderRadius:10,
-                        padding:'9px 16px', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
-                        transition:'background .15s',
-                      }}
-                      onMouseOver={e => e.currentTarget.style.background='#1b5e20'}
-                      onMouseOut={e  => e.currentTarget.style.background='#2E7D32'}>
-                        + Agregar
+
+                      <button
+                        onClick={() => handleAgregar(p)}
+                        className="btn btn-g"
+                        style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', fontSize: 13 }}
+                      >
+                        <LuPlus size={14} /> Agregar
                       </button>
                     </div>
                   </div>

@@ -1,136 +1,107 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import {
+  LuScissors, LuSparkles, LuShield, LuHeart, LuZap, LuStar,
+  LuLeaf, LuTrophy, LuMapPin, LuPhone, LuClock, LuCalendar,
+  LuCamera, LuSmile, LuArrowRight,
+} from 'react-icons/lu'
 
-/* ── animated counter hook ─────────────────── */
-function useCounter(target, duration = 2000, start = false) {
-  const [count, setCount] = useState(0)
+/* ── helpers ─────────────────────────────────── */
+function useInView(threshold = 0.15) {
+  const ref = useRef(null)
+  const [seen, setSeen] = useState(false)
+  useEffect(() => {
+    const o = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setSeen(true); o.disconnect() } }, { threshold })
+    if (ref.current) o.observe(ref.current)
+    return () => o.disconnect()
+  }, [threshold])
+  return [ref, seen]
+}
+
+function useCounter(target, ms = 1600, start = false) {
+  const [n, setN] = useState(0)
   useEffect(() => {
     if (!start) return
-    let s = 0
-    const step = Math.ceil(target / (duration / 16))
-    const timer = setInterval(() => {
-      s = Math.min(s + step, target)
-      setCount(s)
-      if (s >= target) clearInterval(timer)
-    }, 16)
-    return () => clearInterval(timer)
-  }, [start, target, duration])
-  return count
+    const step = Math.max(1, Math.ceil(target / (ms / 16)))
+    let v = 0
+    const t = setInterval(() => { v = Math.min(v + step, target); setN(v); if (v >= target) clearInterval(t) }, 16)
+    return () => clearInterval(t)
+  }, [start, target, ms])
+  return n
 }
 
-/* ── intersection observer hook ─────────────── */
-function useInView(threshold = 0.2) {
-  const ref = useRef(null)
-  const [inView, setInView] = useState(false)
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setInView(true) }, { threshold })
-    if (ref.current) obs.observe(ref.current)
-    return () => obs.disconnect()
-  }, [threshold])
-  return [ref, inView]
-}
-
-/* ── floating particles ─────────────────────── */
-const PARTICLES = ['🦁','🌿','✨','🌺','🦋','🌸','⭐','🍃','🌟','🎀']
-
-function FloatingParticles() {
+function Reveal({ children, delay = 0 }) {
+  const [ref, seen] = useInView()
   return (
-    <div style={{ position:'absolute', inset:0, overflow:'hidden', pointerEvents:'none' }}>
-      {PARTICLES.map((p, i) => (
-        <div key={i} style={{
-          position:'absolute',
-          left: `${(i * 11 + 5) % 95}%`,
-          top: `${(i * 17 + 10) % 80}%`,
-          fontSize: `${16 + (i % 3) * 8}px`,
-          opacity: 0.12 + (i % 4) * 0.04,
-          animation: `floatSlow ${5 + i * 0.7}s ease-in-out ${i * 0.4}s infinite`,
-        }}>{p}</div>
+    <div ref={ref} className={`reveal ${seen ? 'in' : ''}`} style={{ transitionDelay: `${delay}ms` }}>
+      {children}
+    </div>
+  )
+}
+
+function Leaves({ count = 10, items = ['🍃','🌿','🌸','✨'] }) {
+  return (
+    <div style={{ position:'absolute', inset:0, overflow:'hidden', pointerEvents:'none', zIndex:1 }}>
+      {Array.from({ length: count }).map((_, i) => (
+        <span key={i} style={{
+          position:'absolute', fontSize: `${16 + (i % 4) * 6}px`,
+          left:`${(i * 89) % 100}%`, top:`-${(i * 31) % 40}%`,
+          animation:`leafFall ${10 + (i % 5) * 3}s linear ${(i * 0.7) % 6}s infinite`,
+          opacity:0.7, pointerEvents:'none',
+        }}>{items[i % items.length]}</span>
       ))}
     </div>
   )
 }
 
-/* ── section wrapper ────────────────────────── */
-function Section({ id, children, style = {} }) {
-  const [ref, inView] = useInView()
-  return (
-    <section id={id} ref={ref} style={{ padding:'96px 24px', ...style }}>
-      <div style={{ maxWidth:1160, margin:'0 auto', opacity: inView ? 1 : 0, transform: inView ? 'none' : 'translateY(40px)', transition:'all .8s ease' }}>
-        {children}
-      </div>
-    </section>
-  )
-}
-
-/* ── section title ──────────────────────────── */
-function SectionTitle({ tag, title, sub, center=true, light=false }) {
-  return (
-    <div style={{ textAlign: center ? 'center' : 'left', marginBottom: 56 }}>
-      <span className="section-tag" style={{ color: light ? 'rgba(255,255,255,.7)' : '#F57F17' }}>{tag}</span>
-      <h2 style={{ fontFamily:"'Fredoka One',cursive", fontSize:'clamp(32px,4vw,48px)', color: light ? '#fff' : '#1a2e1a', margin:'10px 0 14px', lineHeight:1.1 }}>{title}</h2>
-      {sub && <p style={{ color: light ? 'rgba(255,255,255,.7)' : '#666', fontSize:17, maxWidth:560, margin:'0 auto', lineHeight:1.7 }}>{sub}</p>}
-    </div>
-  )
-}
-
-/* ══════════════════════════════════════════════
-   DATA
-══════════════════════════════════════════════ */
-const TESTIMONIOS = [
-  { nombre:'Mamá de Valeria', ciudad:'Huancayo', texto:'¡Mi hija llora cuando tiene que salir! Le encanta el ambiente de la jungla y las estilistas son súper pacientes con los niños.', stars:5, avatar:'👩' },
-  { nombre:'Papá de Mateo', ciudad:'El Tambo', texto:'Antes era imposible llevar a mi hijo a la peluquería. Aquí juega con las sillas de animalitos y sale feliz con su nuevo corte.', stars:5, avatar:'👨' },
-  { nombre:'Mamá de Luziana', ciudad:'Huancayo', texto:'Excelente atención, ambiente muy limpio y acogedor. Los precios son justos y la calidad del corte es increíble. ¡100% recomendado!', stars:5, avatar:'👩‍🦱' },
-  { nombre:'Abuela de Thiago', ciudad:'Chilca', texto:'Llevo a mi nieto desde que tenía 2 años. Siempre salen felices. El personal es muy amable y profesional con los pequeños.', stars:5, avatar:'👵' },
-  { nombre:'Mamá de Daniela', ciudad:'Huancayo', texto:'El primer corte de mi bebé fue aquí y fue mágico. Nos dieron un certificado especial del primer corte. ¡Recuerdo para toda la vida!', stars:5, avatar:'👩‍👧' },
-  { nombre:'Papá de Renato', ciudad:'Huancavelica', texto:'Vinimos desde Huancavelica porque nos lo recomendaron y valió totalmente la pena. Safari Kids es único en la región.', stars:5, avatar:'👨‍👦' },
-]
-
-const SUCURSALES = [
-  {
-    nombre:'Safari Kids - Sede Principal', zona:'Huancayo Centro',
-    direccion:'Jr. Ayacucho 456, Huancayo', telefono:'(064) 234-567',
-    horario:'Lun–Sáb: 9am – 7pm  |  Dom: 10am – 5pm',
-    emoji:'🦁', color:'#2E7D32', bg:'#e8f5e9',
-    especialidad:'Sede principal con 6 sillas temáticas',
-    maps:'https://maps.google.com/?q=Huancayo+Peru',
-  },
-  {
-    nombre:'Safari Kids - El Tambo', zona:'El Tambo',
-    direccion:'Av. Ferrocarril 789, El Tambo', telefono:'(064) 345-678',
-    horario:'Mar–Sáb: 9am – 6pm  |  Dom: 10am – 4pm',
-    emoji:'🐘', color:'#1565c0', bg:'#e3f2fd',
-    especialidad:'Especialistas en cabello rizado y afro',
-    maps:'https://maps.google.com/?q=El+Tambo+Huancayo',
-  },
-  {
-    nombre:'Safari Kids - Chilca', zona:'Chilca',
-    direccion:'Calle Real 234, Chilca', telefono:'(064) 456-789',
-    horario:'Lun–Sáb: 10am – 6pm',
-    emoji:'🦒', color:'#e65100', bg:'#fff3e0',
-    especialidad:'Especialistas en quinceañeras y eventos',
-    maps:'https://maps.google.com/?q=Chilca+Huancayo',
-  },
+/* ── data ─────────────────────────────────────── */
+const SERVICES = [
+  { emoji:'✂️', titulo:'Corte Aventurero', desc:'Cortes divertidos en sillas de animales. Para niños de 1 a 12 años.', color:'#FF4F95', shade:'#C42E72', from:'S/ 35', tag:'Más popular' },
+  { emoji:'🎨', titulo:'Tintes de Fantasía', desc:'Mechas pastel, colores wash-out 100% seguros para piel delicada.', color:'#A855F7', shade:'#7C3AED', from:'S/ 80', tag:'Lavables' },
+  { emoji:'🛁', titulo:'Spa Selva Mágica', desc:'Lavado, masaje craneal y peinado con esencias naturales de la selva.', color:'#38BDF8', shade:'#0284C7', from:'S/ 45', tag:'Relajante' },
+  { emoji:'🎂', titulo:'Fiesta Safari', desc:'Celebra el cumple en la peluquería. Cortes + maquillaje + fotos.', color:'#FF6F3C', shade:'#E04E1B', from:'S/ 250', tag:'¡Inolvidable!' },
 ]
 
 const VALORES = [
-  { emoji:'🌿', titulo:'100% Seguros', desc:'Solo usamos productos dermatológicamente probados y seguros para piel infantil.' },
-  { emoji:'❤️', titulo:'Con Amor', desc:'Cada niño es especial. Nuestro equipo está capacitado para atender con paciencia y cariño.' },
-  { emoji:'🎉', titulo:'Diversión Total', desc:'Transformamos el corte en una aventura. Sillas temáticas, música y ambiente mágico.' },
-  { emoji:'⭐', titulo:'Calidad Premium', desc:'Estilistas especializados en cabello infantil con años de experiencia y pasión.' },
-  { emoji:'💚', titulo:'Ecológicos', desc:'Comprometidos con el medio ambiente. Productos biodegradables y packaging reciclable.' },
-  { emoji:'🏅', titulo:'Los Mejores', desc:'+500 familias nos eligen. Reconocidos como la mejor peluquería infantil de la región.' },
+  { Icon: LuShield,   titulo:'100% Seguro',       desc:'Solo usamos productos dermatológicamente probados y aprobados para piel infantil delicada.', stat:'+200 productos testeados', color:'#1B7A3E' },
+  { Icon: LuHeart,    titulo:'Con mucho amor',     desc:'Cada niño es especial. Nuestras estilistas están certificadas en atención pediátrica y trabajan con paciencia infinita.', stat:'0 llantos, 500 sonrisas', color:'#FF4F95' },
+  { Icon: LuZap,      titulo:'Pura diversión',     desc:'Sillas de jirafa, elefante y cebra. Música safari y juegos. El corte de cabello se convierte en una aventura.', stat:'Ambiente temático único', color:'#FF6F3C' },
+  { Icon: LuStar,     titulo:'Calidad premium',    desc:'Estilistas con certificación profesional y especialización en cabello infantil. Resultados que duran semanas.', stat:'4.9★ valoración promedio', color:'#FFC42E' },
+  { Icon: LuLeaf,     titulo:'Eco-conscientes',    desc:'Productos biodegradables, packaging reciclable y compromiso con el medio ambiente para las generaciones que vienen.', stat:'100% ecológico', color:'#38BDF8' },
+  { Icon: LuTrophy,   titulo:'Los #1 de Huancayo', desc:'Más de 500 familias nos eligen cada mes. Reconocidos por la comunidad como la mejor peluquería infantil de la región.', stat:'+500 familias · 3 sedes', color:'#A855F7' },
 ]
 
-const GALERIA = [
-  { url:'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=480&h=480&fit=crop&auto=format', alt:'Estilizado infantil' },
-  { url:'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=480&h=480&fit=crop&auto=format', alt:'Niño feliz' },
-  { url:'https://images.unsplash.com/photo-1543269865-cbf427effbad?w=480&h=480&fit=crop&auto=format', alt:'Niña sonriendo' },
-  { url:'https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=480&h=480&fit=crop&auto=format', alt:'Niños felices' },
-  { url:'https://images.unsplash.com/photo-1562322140-8baeececf3df?w=480&h=480&fit=crop&auto=format', alt:'Corte de cabello' },
-  { url:'https://images.unsplash.com/photo-1560869713-7d0a29430803?w=480&h=480&fit=crop&auto=format', alt:'Salón de belleza' },
-  { url:'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=480&h=480&fit=crop&auto=format', alt:'Estilista profesional' },
-  { url:'https://images.unsplash.com/photo-1582564286939-400a311013a2?w=480&h=480&fit=crop&auto=format', alt:'Peinado creativo' },
+const TESTIMONIOS = [
+  { nombre:'Mamá de Valeria', ciudad:'Huancayo', texto:'¡Mi hija llora cuando tiene que SALIR! Le encanta el ambiente y las estilistas son súper pacientes.', avatar:'👩', color:'#FF4F95' },
+  { nombre:'Papá de Mateo', ciudad:'El Tambo', texto:'Antes era imposible llevarlo. Aquí juega con las sillas-animales y sale feliz con corte nuevo.', avatar:'👨', color:'#38BDF8' },
+  { nombre:'Mamá de Luziana', ciudad:'Huancayo', texto:'Atención excelente, ambiente limpio y precios justos. La calidad del corte es increíble.', avatar:'👩‍🦱', color:'#FFC42E' },
+  { nombre:'Abuela de Thiago', ciudad:'Chilca', texto:'Llevo a mi nieto desde los 2 años. Siempre sale feliz. ¡Personal muy amable y profesional!', avatar:'👵', color:'#A855F7' },
+  { nombre:'Mamá de Daniela', ciudad:'Huancayo', texto:'El primer corte de mi bebé fue mágico. Nos dieron un certificado especial. ¡Recuerdo para siempre!', avatar:'👩‍👧', color:'#FF6F3C' },
+  { nombre:'Papá de Renato', ciudad:'Huancavelica', texto:'Vinimos desde Huancavelica porque nos lo recomendaron y valió la pena. Es único en la región.', avatar:'👨‍👦', color:'#1B7A3E' },
+]
+
+const GALLERY = [
+  { img:'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=400&fit=crop&auto=format', caption:'¡Primer corte!' },
+  { img:'https://images.unsplash.com/photo-1560869713-7d0a29430803?w=400&h=400&fit=crop&auto=format', caption:'Nuestro salón' },
+  { img:'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400&h=400&fit=crop&auto=format', caption:'Sonrisa perfecta' },
+  { img:'https://images.unsplash.com/photo-1562322140-8baeececf3df?w=400&h=400&fit=crop&auto=format', caption:'Corte con amor' },
+  { img:'https://images.unsplash.com/photo-1543269865-cbf427effbad?w=400&h=400&fit=crop&auto=format', caption:'Aventura safari' },
+  { img:'https://images.unsplash.com/photo-1582564286939-400a311013a2?w=400&h=400&fit=crop&auto=format', caption:'Estilo único' },
+  { img:'https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=400&h=400&fit=crop&auto=format', caption:'Todos felices' },
+  { img:'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=400&h=400&fit=crop&auto=format', caption:'Manos mágicas' },
+]
+
+const SEDES = [
+  { nombre:'Sede Principal', zona:'Huancayo Centro', direccion:'Jr. Ayacucho 456', telefono:'(064) 234-567', horario:'Lun–Sáb · 9am – 7pm', emoji:'🦁', color:'#1B7A3E', tag:'6 sillas temáticas' },
+  { nombre:'El Tambo', zona:'El Tambo', direccion:'Av. Ferrocarril 789', telefono:'(064) 345-678', horario:'Mar–Sáb · 9am – 6pm', emoji:'🐘', color:'#38BDF8', tag:'Experta en cabello rizado' },
+  { nombre:'Chilca', zona:'Chilca', direccion:'Calle Real 234', telefono:'(064) 456-789', horario:'Lun–Sáb · 10am – 6pm', emoji:'🦒', color:'#FF6F3C', tag:'Quinceañeras y eventos' },
+]
+
+const MARQUEE_ITEMS = [
+  '⭐ 4.9/5 EN GOOGLE','🦁 +500 FAMILIAS','🎨 SIN LÁGRIMAS, GARANTIZADO',
+  '✂️ 3 SEDES EN HUANCAYO','🎉 ZONA DE JUEGOS','🌿 PRODUCTOS NATURALES',
+  '🎂 FIESTAS TEMÁTICAS','🏆 4 AÑOS DE EXPERIENCIA','💚 +98% REGRESAN',
 ]
 
 /* ══════════════════════════════════════════════
@@ -138,462 +109,495 @@ const GALERIA = [
 ══════════════════════════════════════════════ */
 export default function LandingPage() {
   const { user } = useAuth()
-  const navigate = useNavigate()
+  const navigate  = useNavigate()
   const [statsRef, statsInView] = useInView(0.3)
-  const [activeTestimonio, setActiveTestimonio] = useState(0)
+  const [rawr, setRawr] = useState(false)
 
   const c1 = useCounter(500, 2000, statsInView)
-  const c2 = useCounter(5,   1500, statsInView)
+  const c2 = useCounter(98,  2000, statsInView)
   const c3 = useCounter(3,   1200, statsInView)
-  const c4 = useCounter(98,  2000, statsInView)
+  const c4 = useCounter(4,   1200, statsInView)
 
   const handleReservar = () => {
     if (user?.rol?.toUpperCase() === 'CLIENTE') navigate('/reservar')
-    else navigate('/login', { state: { intent:'reservar', message:'¡Reserva tu cita en Safari Kids!' } })
+    else navigate('/login', { state: { intent:'reservar' } })
   }
 
-  // Auto-rotate testimonios
-  useEffect(() => {
-    const t = setInterval(() => setActiveTestimonio(p => (p + 1) % TESTIMONIOS.length), 4000)
-    return () => clearInterval(t)
-  }, [])
-
   return (
-    <div style={{ fontFamily:"'Nunito',sans-serif", overflowX:'hidden' }}>
+    <div style={{ fontFamily:"'Nunito',sans-serif", overflowX:'hidden', background:'var(--paper)' }}>
 
-      {/* ═══════ HERO ════════════════════════════════════════════════════════ */}
-      <section style={{
-        minHeight:'100vh', position:'relative', overflow:'hidden',
-        background:'linear-gradient(160deg, #0d3b0f 0%, #1b5e20 35%, #2E7D32 65%, #33691e 100%)',
-        display:'flex', alignItems:'center',
-      }}>
-        <FloatingParticles />
+      {/* ═══════ HERO ═══════════════════════════════════════════════════════ */}
+      <section style={{ minHeight:'100vh', position:'relative', overflow:'hidden' }} className="hero-bg">
+        {/* Sun */}
+        <div className="spin-slow" style={{
+          position:'absolute', top:'8%', right:'6%', zIndex:1,
+          width:160, height:160, borderRadius:'50%',
+          background:'radial-gradient(circle at 35% 35%,#FFF59D,#FFC42E 65%,#FF6F3C)',
+          boxShadow:'0 0 80px rgba(255,196,46,.7)',
+        }} />
 
-        {/* Decorative blobs */}
-        <div style={{ position:'absolute', top:-120, right:-100, width:500, height:500, borderRadius:'50%', background:'rgba(249,168,37,.08)' }} className="anim-float-slow" />
-        <div style={{ position:'absolute', bottom:-80, left:-80, width:350, height:350, borderRadius:'60% 40% 70% 30%/50% 60% 40% 70%', background:'rgba(255,255,255,.04)' }} />
-        <div style={{ position:'absolute', top:'30%', right:'8%', width:180, height:180, borderRadius:'40% 60% 30% 70%/70% 30% 60% 40%', background:'rgba(249,168,37,.1)' }} className="anim-float" />
+        {/* Clouds drifting */}
+        <div style={{ position:'absolute', top:'12%', left:0, width:'100%', pointerEvents:'none', zIndex:1 }}>
+          <div style={{ position:'absolute', top:0, animation:'drift 50s linear infinite', fontSize:80 }}>☁️</div>
+          <div style={{ position:'absolute', top:30, animation:'drift 80s linear infinite', fontSize:56, animationDelay:'-20s' }}>☁️</div>
+          <div style={{ position:'absolute', top:10, animation:'drift 65s linear infinite', fontSize:64, animationDelay:'-40s' }}>☁️</div>
+        </div>
 
-        <div style={{ maxWidth:1160, margin:'0 auto', padding:'120px 24px 80px', position:'relative', zIndex:1, display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center' }}>
+        <Leaves count={14} />
+
+        {/* Mountain silhouettes */}
+        <svg viewBox="0 0 1440 300" preserveAspectRatio="none" style={{ position:'absolute', bottom:200, left:0, width:'100%', height:220, zIndex:1 }}>
+          <path d="M0 220 L160 80 L300 180 L460 60 L640 200 L820 100 L1000 180 L1180 80 L1340 200 L1440 140 L1440 300 L0 300 Z" fill="#A0D8A8" opacity=".6" />
+        </svg>
+        <svg viewBox="0 0 1440 300" preserveAspectRatio="none" style={{ position:'absolute', bottom:160, left:0, width:'100%', height:200, zIndex:1 }}>
+          <path d="M0 250 L200 120 L380 200 L560 100 L760 220 L960 140 L1180 220 L1380 120 L1440 180 L1440 300 L0 300 Z" fill="#7BC487" opacity=".75" />
+        </svg>
+
+        {/* Grass */}
+        <div style={{ position:'absolute', bottom:0, left:0, right:0, height:200, zIndex:2, background:'linear-gradient(180deg,#5BA869 0%,#3B8C4E 100%)' }} />
+        <svg viewBox="0 0 1440 40" preserveAspectRatio="none" style={{ position:'absolute', bottom:195, left:0, width:'100%', height:50, zIndex:3 }}>
+          <path d="M0 40 Q 40 0 80 30 T 160 20 T 240 30 T 320 10 T 400 30 T 480 15 T 560 35 T 640 5 T 720 30 T 800 20 T 880 35 T 960 10 T 1040 30 T 1120 5 T 1200 30 T 1280 20 T 1360 35 T 1440 15 L 1440 40 Z" fill="#3B8C4E" />
+        </svg>
+
+        {/* Ground animals */}
+        <div style={{ position:'absolute', bottom:70, left:0, right:0, zIndex:4, display:'flex', justifyContent:'space-around', alignItems:'flex-end', pointerEvents:'none' }}>
+          {[['🐘',70],['🦒',80],['🦓',60],['🐵',56],['🦛',64]].map(([a,s],i) => (
+            <div key={i} style={{ fontSize:s, animation:`bob ${2.5+i*.3}s ease-in-out ${-i*.5}s infinite`, filter:'drop-shadow(4px 4px 0 rgba(0,0,0,.15))' }}>{a}</div>
+          ))}
+        </div>
+
+        {/* Hero content */}
+        <div style={{ maxWidth:1200, margin:'0 auto', padding:'140px 24px 320px', position:'relative', zIndex:5, display:'grid', gridTemplateColumns:'1.1fr .9fr', gap:48, alignItems:'center' }} className="hero-grid">
           {/* Left */}
           <div>
-            <div className="anim-slide-up delay-0" style={{
-              display:'inline-flex', alignItems:'center', gap:8,
-              background:'rgba(249,168,37,.15)', border:'1px solid rgba(249,168,37,.3)',
-              borderRadius:50, padding:'8px 18px', marginBottom:24,
-            }}>
-              <span>✦</span>
-              <span style={{ fontFamily:"'Fredoka One',cursive", color:'#F9A825', fontSize:13, letterSpacing:1.5, textTransform:'uppercase' }}>Peluquería infantil en Huancayo</span>
-              <span>✦</span>
+            <div className="pop" style={{ marginBottom:24 }}>
+              <span className="stamp">¡La aventura empieza aquí!</span>
             </div>
-
-            <h1 className="anim-slide-up delay-1" style={{ fontFamily:"'Fredoka One',cursive", fontSize:'clamp(42px,5.5vw,68px)', color:'#fff', lineHeight:1.05, marginBottom:20 }}>
-              Donde los<br />
-              <span style={{ color:'#F9A825', position:'relative', display:'inline-block' }}>
-                pequeños
-                <div style={{ position:'absolute', bottom:-4, left:0, right:0, height:4, background:'#F9A825', borderRadius:4, opacity:.4 }} />
-              </span>
-              <br />brillan ✨
+            <h1 style={{ fontFamily:"'Fredoka One',cursive", fontSize:'clamp(48px,7vw,88px)', lineHeight:.95, color:'var(--ink)', marginBottom:24, letterSpacing:'-1px' }}>
+              ¡Cortes que{' '}
+              <span className="squiggle squiggle--pink" style={{ color:'var(--pink)' }}>rugen</span>
+              {' '}de{' '}
+              <span style={{ color:'var(--orange-d)', display:'inline-block', transform:'rotate(-3deg)' }}>diversión!</span>
+              <span
+                onClick={() => setRawr(true)}
+                onAnimationEnd={() => setRawr(false)}
+                style={{ display:'inline-block', marginLeft:12, fontSize:'.7em', cursor:'pointer', animation: rawr ? 'roar .6s ease-in-out' : 'none' }}>🦁</span>
             </h1>
-
-            <p className="anim-slide-up delay-2" style={{ color:'rgba(255,255,255,.8)', fontSize:18, lineHeight:1.75, maxWidth:480, marginBottom:36 }}>
-              Cortes divertidos, ambiente mágico de selva y estilistas que adoran a los niños.
-              La experiencia que tu hijo va a recordar para siempre.
+            <p style={{ fontSize:19, color:'#34423D', maxWidth:480, lineHeight:1.6, marginBottom:36, fontWeight:700 }}>
+              La <strong style={{ color:'var(--green-d)' }}>peluquería temática</strong> que tu peque va a pedir visitar.
+              Sillas-animales, música safari y estilistas que adoran a los niños. 💚
             </p>
-
-            <div className="anim-slide-up delay-3" style={{ display:'flex', gap:14, flexWrap:'wrap', marginBottom:48 }}>
-              <button onClick={handleReservar} className="btn-jungle btn-jungle-yellow anim-pulse-glow">
-                🗓 Reservar mi cita
+            <div style={{ display:'flex', gap:14, flexWrap:'wrap', marginBottom:36 }}>
+              <button onClick={handleReservar} className="btn btn-p" style={{ animation:'pulseRing 2s infinite' }}>
+                🗓 Reservar mi safari
               </button>
-              <Link to="/servicios" className="btn-jungle btn-jungle-white" style={{ textDecoration:'none' }}>
+              <Link to="/servicios" className="btn btn-w" style={{ textDecoration:'none' }}>
                 Ver servicios →
               </Link>
             </div>
-
-            {/* Mini stats */}
-            <div className="anim-slide-up delay-4" style={{ display:'flex', gap:32, paddingTop:32, borderTop:'1px solid rgba(255,255,255,.15)' }}>
-              {[['500+','Familias felices'],['5★','Valoración media'],['3','Sucursales']].map(([n,l]) => (
-                <div key={l}>
-                  <p style={{ fontFamily:"'Fredoka One',cursive", fontSize:28, color:'#F9A825', margin:0 }}>{n}</p>
-                  <p style={{ color:'rgba(255,255,255,.6)', fontSize:12, margin:'2px 0 0' }}>{l}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Right - Hero visual */}
-          <div className="anim-slide-right delay-2" style={{ textAlign:'center', position:'relative' }}>
-            {/* Main circle */}
-            <div className="anim-float" style={{
-              width:320, height:320, borderRadius:'50%',
-              background:'rgba(249,168,37,.12)', border:'3px solid rgba(249,168,37,.25)',
-              display:'flex', alignItems:'center', justifyContent:'center',
-              margin:'0 auto 24px', fontSize:160,
-              boxShadow:'0 0 80px rgba(249,168,37,.2)',
-            }}>🦁</div>
-
-            {/* Floating badges */}
-            {[
-              { emoji:'✂️', label:'Cortes creativos', pos:{ top:'5%', left:'-5%' }, color:'#e8f5e9' },
-              { emoji:'🎨', label:'Tintes seguros',   pos:{ top:'15%', right:'-8%' }, color:'#fff8e1' },
-              { emoji:'⭐', label:'¡El mejor!',       pos:{ bottom:'20%', left:'-10%' }, color:'#e3f2fd' },
-              { emoji:'🌺', label:'Ambiente mágico',  pos:{ bottom:'10%', right:'-5%' }, color:'#fce4ec' },
-            ].map(b => (
-              <div key={b.label} className="anim-bounce-in" style={{
-                position:'absolute', ...b.pos,
-                background:b.color, borderRadius:16, padding:'10px 14px',
-                boxShadow:'0 4px 16px rgba(0,0,0,.12)',
-                display:'flex', alignItems:'center', gap:8, whiteSpace:'nowrap',
-              }}>
-                <span style={{ fontSize:22 }}>{b.emoji}</span>
-                <span style={{ fontWeight:800, fontSize:13, color:'#1a2e1a' }}>{b.label}</span>
+            {/* Social proof */}
+            <div style={{ display:'inline-flex', alignItems:'center', gap:12, padding:'16px 20px', background:'rgba(255,255,255,.8)', borderRadius:20, border:'3px solid var(--ink)', boxShadow:'4px 4px 0 var(--ink)' }}>
+              <div style={{ display:'flex' }}>
+                {['😊','👶','🧒','👧','🤗'].map((e,i)=>(
+                  <span key={i} style={{ width:32,height:32,borderRadius:'50%',background:['#FFC42E','#FF4F95','#38BDF8','#A855F7','#FF6F3C'][i],border:'3px solid var(--ink)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,marginLeft:i?-10:0 }}>{e}</span>
+                ))}
               </div>
-            ))}
-
-            {/* Next slot card */}
-            <div style={{
-              background:'rgba(255,255,255,.12)', backdropFilter:'blur(12px)',
-              border:'1px solid rgba(255,255,255,.2)', borderRadius:20, padding:'16px 24px',
-              display:'inline-flex', alignItems:'center', gap:12,
-            }}>
-              <div style={{ width:40, height:40, borderRadius:'50%', background:'#F9A825', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>🗓</div>
-              <div style={{ textAlign:'left' }}>
-                <p style={{ color:'#fff', fontWeight:800, fontSize:14, margin:0 }}>Agenda disponible hoy</p>
-                <p style={{ color:'rgba(255,255,255,.65)', fontSize:12, margin:'2px 0 0' }}>Lun–Sáb · 9am a 7pm · 3 sedes</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Wave bottom */}
-        <div style={{ position:'absolute', bottom:-1, left:0, right:0 }}>
-          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="#fafaf7"/>
-          </svg>
-        </div>
-      </section>
-
-      {/* ═══════ COUNTERS ════════════════════════════════════════════════════ */}
-      <section ref={statsRef} style={{ background:'linear-gradient(135deg,#1b5e20,#2E7D32)', padding:'64px 24px', position:'relative', overflow:'hidden' }}>
-        <FloatingParticles />
-        <div style={{ maxWidth:1000, margin:'0 auto', display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:24, position:'relative', zIndex:1 }}>
-          {[
-            { num: c1, suffix:'+', label:'Familias satisfechas', emoji:'👨‍👧' },
-            { num: c2, suffix:'★', label:'Estrellas de valoración', emoji:'⭐' },
-            { num: c3, suffix:'', label:'Sucursales en Huancayo', emoji:'📍' },
-            { num: c4, suffix:'%', label:'Clientes que repiten', emoji:'💚' },
-          ].map(s => (
-            <div key={s.label} style={{ textAlign:'center', padding:'28px 16px', background:'rgba(255,255,255,.1)', backdropFilter:'blur(8px)', borderRadius:24, border:'2px solid rgba(255,255,255,.15)', transition:'transform .2s' }}
-              onMouseOver={e => e.currentTarget.style.transform='scale(1.05)'}
-              onMouseOut={e => e.currentTarget.style.transform='scale(1)'}>
-              <div style={{ fontSize:36, marginBottom:8 }}>{s.emoji}</div>
-              <p className="counter-num">{s.num}{s.suffix}</p>
-              <p style={{ color:'rgba(255,255,255,.75)', fontSize:13, marginTop:8, fontWeight:600 }}>{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ═══════ QUIÉNES SOMOS ══════════════════════════════════════════════ */}
-      <Section id="nosotros" style={{ background:'#fff' }}>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:64, alignItems:'center' }}>
-          {/* Visual */}
-          <div style={{ position:'relative' }}>
-            <div style={{
-              width:'100%', aspectRatio:'1', maxWidth:420,
-              background:'linear-gradient(135deg,#e8f5e9,#c8e6c9)',
-              borderRadius:'60% 40% 70% 30%/50% 60% 40% 70%',
-              display:'flex', alignItems:'center', justifyContent:'center',
-              fontSize:140,
-            }} className="anim-float-slow">🦁</div>
-
-            {/* Floating cards */}
-            {[
-              { t:'Fundada en 2020', emoji:'🏆', pos:{ top:'5%', right:'-5%' }, bg:'#fff8e1' },
-              { t:'Huancayo, Perú', emoji:'📍', pos:{ bottom:'10%', left:'-5%' }, bg:'#e3f2fd' },
-            ].map(c => (
-              <div key={c.t} style={{ position:'absolute', ...c.pos, background:c.bg, borderRadius:16, padding:'12px 18px', boxShadow:'0 8px 24px rgba(0,0,0,.1)', display:'flex', alignItems:'center', gap:10 }}>
-                <span style={{ fontSize:24 }}>{c.emoji}</span>
-                <span style={{ fontWeight:800, fontSize:14, color:'#1a2e1a' }}>{c.t}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Text */}
-          <div>
-            <SectionTitle tag="Conócenos" title="Somos más que una peluquería" sub="" center={false} />
-            <p style={{ color:'#555', fontSize:16, lineHeight:1.85, marginBottom:20 }}>
-              <strong style={{ color:'#2E7D32' }}>Safari Kids</strong> nació en 2020 con una misión clara: transformar el momento del corte de cabello en una <strong>aventura divertida y mágica</strong> para cada niño y niña de Huancayo.
-            </p>
-            <p style={{ color:'#555', fontSize:16, lineHeight:1.85, marginBottom:32 }}>
-              Sabemos que muchos niños le tienen miedo a las tijeras. Por eso creamos un ambiente temático de selva africana, con sillas en forma de animales, música alegre y un equipo de estilistas <strong>especialmente capacitados</strong> para trabajar con paciencia, amor y profesionalismo con los más pequeños.
-            </p>
-
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:32 }}>
-              {[['👩‍🎓','Estilistas certificadas'],['🌿','Productos naturales'],['🎭','Ambiente temático'],['🏅','+4 años de experiencia']].map(([e,t]) => (
-                <div key={t} style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 16px', background:'#f9fdf9', borderRadius:12, border:'1px solid #e8f5e9' }}>
-                  <span style={{ fontSize:22 }}>{e}</span>
-                  <span style={{ fontWeight:700, fontSize:13, color:'#1a2e1a' }}>{t}</span>
-                </div>
-              ))}
-            </div>
-
-            <button onClick={handleReservar} className="btn-jungle btn-jungle-green">
-              🗓 Reserva ahora
-            </button>
-          </div>
-        </div>
-      </Section>
-
-      {/* ═══════ POR QUÉ ELEGIRNOS ══════════════════════════════════════════ */}
-      <Section style={{ background:'#fafaf7' }} className="paw-pattern">
-        <SectionTitle tag="Por qué elegirnos" title="La experiencia Safari Kids" sub="No somos una peluquería común. Somos una aventura para tu hijo." />
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:20 }}>
-          {VALORES.map((v, i) => (
-            <div key={v.titulo} className="card-fun" style={{ padding:'28px 24px', animationDelay:`${i * .1}s` }}>
-              <div style={{ fontSize:40, marginBottom:14 }}>{v.emoji}</div>
-              <h3 style={{ fontFamily:"'Fredoka One',cursive", fontSize:20, color:'#1a2e1a', marginBottom:8 }}>{v.titulo}</h3>
-              <p style={{ color:'#777', fontSize:14, lineHeight:1.7 }}>{v.desc}</p>
-            </div>
-          ))}
-        </div>
-      </Section>
-
-      {/* ═══════ CÓMO FUNCIONA ══════════════════════════════════════════════ */}
-      <Section style={{ background:'#fff' }}>
-        <SectionTitle tag="Proceso simple" title="Reserva en 3 pasos" sub="Agendar tu cita en Safari Kids es muy fácil. ¡Solo toma 2 minutos!" />
-        <div style={{ maxWidth:680, margin:'0 auto', display:'flex', flexDirection:'column', gap:16 }}>
-          {[
-            { n:'1', emoji:'📱', title:'Créate una cuenta', desc:'Regístrate gratis con tu correo electrónico. Solo toma 30 segundos.' },
-            { n:'2', emoji:'✂️', title:'Elige tu servicio',  desc:'Explora nuestro catálogo de servicios y selecciona el que más te guste.' },
-            { n:'3', emoji:'🗓', title:'Reserva tu turno',  desc:'Elige la fecha, hora y sede que más te convenga. ¡Listo!' },
-          ].map(s => (
-            <div key={s.n} className="step-card">
-              <div className="step-num">{s.n}</div>
               <div>
-                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
-                  <span style={{ fontSize:22 }}>{s.emoji}</span>
-                  <h3 style={{ fontFamily:"'Fredoka One',cursive", fontSize:19, color:'#1a2e1a' }}>{s.title}</h3>
-                </div>
-                <p style={{ color:'#777', fontSize:14, lineHeight:1.6 }}>{s.desc}</p>
+                <p style={{ fontFamily:"'Fredoka One',cursive", fontSize:15, color:'var(--ink)', margin:0 }}>⭐⭐⭐⭐⭐ 4.9/5</p>
+                <p style={{ fontSize:11, color:'#666', margin:0 }}>+500 familias</p>
               </div>
+            </div>
+          </div>
+
+          {/* Right */}
+          <div style={{ position:'relative', height:480 }}>
+            <div className="float-l" style={{ position:'absolute', top:10, left:'15%', width:280, height:280, borderRadius:'50%', background:'radial-gradient(circle at 30% 30%,#FFD955,#FFC42E 65%,#FF6F3C)', border:'6px solid var(--ink)', boxShadow:'10px 10px 0 var(--ink)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:170, zIndex:2 }}>🦁</div>
+            {[
+              { e:'✂️', t:'Cortes creativos',  pos:{ top:0, right:20 },      color:'#FF4F95', r:6  },
+              { e:'🎨', t:'Tintes seguros',    pos:{ top:'38%', right:0 },   color:'#38BDF8', r:-6 },
+              { e:'🎂', t:'¡Fiestas!',         pos:{ bottom:'15%', right:'15%' }, color:'#A855F7', r:8  },
+              { e:'🌿', t:'100% seguro',       pos:{ bottom:30, left:10 },   color:'#1B7A3E', r:-8 },
+              { e:'🎁', t:'Regalo 1er corte',  pos:{ top:'40%', left:0 },    color:'#FF6F3C', r:4  },
+            ].map((s,i)=>(
+              <div key={i} className="float" style={{ position:'absolute', ...s.pos, transform:`rotate(${s.r}deg)`, '--r':`${s.r}deg`, animationDelay:`${i*.3}s`, background:'#fff', border:'4px solid var(--ink)', borderRadius:18, boxShadow:'5px 5px 0 var(--ink)', padding:'10px 14px', display:'flex', alignItems:'center', gap:10, zIndex:3, minWidth:130 }}>
+                <span style={{ fontSize:22, width:38, height:38, borderRadius:10, background:s.color, display:'inline-flex', alignItems:'center', justifyContent:'center', border:'3px solid var(--ink)' }}>{s.e}</span>
+                <span style={{ fontFamily:"'Fredoka One',cursive", fontSize:13, color:'var(--ink)' }}>{s.t}</span>
+              </div>
+            ))}
+            <div className="spin-r" style={{ position:'absolute', bottom:-20, left:-10, width:110, height:110, borderRadius:'50%', background:'var(--yellow)', border:'4px solid var(--ink)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'6px 6px 0 var(--ink)', zIndex:4 }}>
+              <span style={{ fontFamily:"'Permanent Marker',cursive", fontSize:12, color:'var(--ink)', textAlign:'center', lineHeight:1.1 }}>¡PRIMERA<br/>CITA<br/>-10%!</span>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ position:'absolute', bottom:24, left:'50%', transform:'translateX(-50%)', zIndex:5 }}>
+          <div className="float" style={{ fontFamily:"'Caveat',cursive", fontSize:20, color:'var(--ink)', fontWeight:700 }}>baja para ver la magia ↓</div>
+        </div>
+      </section>
+
+      {/* ═══════ MARQUEE ═══════════════════════════════════════════════════ */}
+      <div className="marquee-wrap" style={{ marginTop:0 }}>
+        <div className="marquee-track">
+          {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((it, i) => (
+            <div key={i} className="marquee-item">
+              <span>{it}</span>
+              <span className="dot" />
             </div>
           ))}
         </div>
-        <div style={{ textAlign:'center', marginTop:40 }}>
-          <button onClick={handleReservar} className="btn-jungle btn-jungle-green anim-pulse-glow">
-            🦁 ¡Quiero reservar mi cita!
-          </button>
-        </div>
-      </Section>
+      </div>
 
-      {/* ═══════ TESTIMONIOS ════════════════════════════════════════════════ */}
-      <Section style={{ background:'linear-gradient(160deg,#1b5e20,#2E7D32)' }}>
-        <SectionTitle tag="Lo que dicen las familias" title="Más de 500 familias nos recomiendan" sub="Lee las experiencias reales de nuestros clientes más pequeños y sus papás." light />
-
-        {/* Featured */}
-        <div style={{ background:'rgba(255,255,255,.08)', backdropFilter:'blur(12px)', border:'2px solid rgba(255,255,255,.15)', borderRadius:28, padding:'36px', marginBottom:24, transition:'all .5s' }}>
-          <div style={{ display:'flex', gap:6, marginBottom:16 }}>
-            {'★★★★★'.split('').map((s,i) => <span key={i} style={{ color:'#F9A825', fontSize:20 }}>{s}</span>)}
-          </div>
-          <p style={{ color:'rgba(255,255,255,.9)', fontSize:18, lineHeight:1.8, marginBottom:20, fontStyle:'italic' }}>
-            "{TESTIMONIOS[activeTestimonio].texto}"
-          </p>
-          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <div style={{ width:48, height:48, borderRadius:'50%', background:'rgba(255,255,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24 }}>
-              {TESTIMONIOS[activeTestimonio].avatar}
+      {/* ═══════ SERVICIOS ══════════════════════════════════════════════════ */}
+      <section id="servicios" style={{ padding:'120px 24px 96px', background:'var(--paper)', position:'relative' }}>
+        <div className="dotted-bg" style={{ position:'absolute', inset:0, opacity:.12, pointerEvents:'none' }} />
+        <div style={{ maxWidth:1200, margin:'0 auto', position:'relative' }}>
+          <Reveal>
+            <div style={{ textAlign:'center', marginBottom:60 }}>
+              <span className="section-tag">Nuestros servicios</span>
+              <h2 className="section-title">Elige tu <span className="squiggle" style={{ color:'var(--orange-d)' }}>aventura</span></h2>
+              <p style={{ color:'#555', fontSize:17, maxWidth:560, margin:'0 auto', lineHeight:1.7 }}>Cuatro maneras de hacer del corte una experiencia que tu peque va a pedir repetir.</p>
             </div>
+          </Reveal>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))', gap:28 }}>
+            {SERVICES.map((s, i) => (
+              <Reveal key={s.titulo} delay={i * 80}>
+                <div className="card-chunky" style={{ background:s.color, color:'#fff', padding:0, height:'100%', cursor:'pointer', position:'relative' }}>
+                  <div style={{ position:'absolute', top:14, right:14, zIndex:2, background:'#fff', color:'var(--ink)', fontFamily:"'Permanent Marker',cursive", fontSize:12, padding:'4px 10px', borderRadius:999, border:'3px solid var(--ink)', transform:'rotate(6deg)' }}>{s.tag}</div>
+                  <div style={{ height:180, background:`radial-gradient(circle at 50% 70%,${s.shade},transparent 60%)`, display:'flex', alignItems:'flex-end', justifyContent:'center', borderBottom:'4px solid var(--ink)', position:'relative', overflow:'hidden' }}>
+                    <span style={{ position:'absolute', top:20, left:24, fontSize:18 }}>✨</span>
+                    <span style={{ position:'absolute', top:40, right:30, fontSize:14 }}>⭐</span>
+                    <span style={{ fontSize:130, marginBottom:-10, display:'inline-block', filter:'drop-shadow(4px 4px 0 rgba(0,0,0,.25))' }}>{s.emoji}</span>
+                  </div>
+                  <div style={{ padding:'24px 22px 28px' }}>
+                    <h3 style={{ fontFamily:"'Fredoka One',cursive", fontSize:24, marginBottom:8 }}>{s.titulo}</h3>
+                    <p style={{ fontSize:14, lineHeight:1.6, opacity:.92, marginBottom:18 }}>{s.desc}</p>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                      <div>
+                        <div style={{ fontSize:11, opacity:.8, fontWeight:700, textTransform:'uppercase', letterSpacing:1 }}>Desde</div>
+                        <div style={{ fontFamily:"'Fredoka One',cursive", fontSize:28 }}>{s.from}</div>
+                      </div>
+                      <button onClick={handleReservar} style={{ background:'var(--ink)', color:'#fff', padding:'10px 16px', borderRadius:999, border:'none', cursor:'pointer', fontWeight:800, fontSize:13, fontFamily:'inherit' }}>Reservar →</button>
+                    </div>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ NOSOTROS ══════════════════════════════════════════════════ */}
+      <section id="nosotros" style={{ padding:'96px 24px', background:'#FFE8B0', position:'relative', overflow:'hidden' }}>
+        <Leaves count={8} items={['🌿','🌸','🦋']} />
+        <div style={{ maxWidth:1160, margin:'0 auto', display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center', position:'relative', zIndex:2 }} className="two-col">
+          <Reveal>
+            <div style={{ position:'relative', height:500 }}>
+              <div className="blob-anim" style={{ position:'absolute', top:30, left:30, width:380, height:380, background:'linear-gradient(135deg,#FF4F95,#A855F7)', border:'5px solid var(--ink)', boxShadow:'10px 10px 0 var(--ink)' }} />
+              {[
+                { emoji:'🦒', caption:'¡La silla jirafa!', style:{ top:0, left:0, width:200, transform:'rotate(-8deg)' }, bg:'linear-gradient(135deg,#FFC42E,#FF6F3C)' },
+                { emoji:'🐘', caption:'¡Listos!', style:{ top:50, right:30, width:180, transform:'rotate(6deg)' }, bg:'linear-gradient(135deg,#38BDF8,#A855F7)' },
+                { emoji:'👧', caption:'Primer corte de Vale 💕', style:{ bottom:0, left:70, width:220, transform:'rotate(4deg)' }, bg:'linear-gradient(135deg,#FF4F95,#FFC42E)' },
+              ].map((p,i) => (
+                <div key={i} className="polaroid" style={{ position:'absolute', ...p.style }}>
+                  <div style={{ width:'100%', aspectRatio:'1', borderRadius:4, background:p.bg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:90 }}>{p.emoji}</div>
+                  <div style={{ fontFamily:"'Caveat',cursive", fontSize:18, textAlign:'center', color:'var(--ink)' }}>{p.caption}</div>
+                </div>
+              ))}
+              <div className="spin-slow" style={{ position:'absolute', top:'38%', right:-10, width:90, height:90, borderRadius:'50%', background:'var(--yellow)', border:'4px solid var(--ink)', boxShadow:'5px 5px 0 var(--ink)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'Permanent Marker',cursive", fontSize:11, lineHeight:1.1, color:'var(--ink)', textAlign:'center', zIndex:5 }}>
+                DESDE<br/>2020
+              </div>
+            </div>
+          </Reveal>
+          <Reveal delay={120}>
             <div>
-              <p style={{ color:'#fff', fontWeight:800, margin:0 }}>{TESTIMONIOS[activeTestimonio].nombre}</p>
-              <p style={{ color:'rgba(255,255,255,.6)', fontSize:13, margin:0 }}>📍 {TESTIMONIOS[activeTestimonio].ciudad}</p>
+              <span className="section-tag">Conócenos</span>
+              <h2 className="section-title">Somos más que <br/>una <span className="squiggle squiggle--sky" style={{ color:'var(--sky-d)' }}>peluquería</span></h2>
+              <p style={{ fontSize:17, lineHeight:1.75, color:'#34423D', marginBottom:18 }}>
+                <strong>Safari Kids</strong> nació en 2020 para cambiar el momento del corte de pelo: de ser un "trámite con miedo" a una aventura que los peques piden repetir.
+              </p>
+              <p style={{ fontSize:17, lineHeight:1.75, color:'#34423D', marginBottom:28 }}>
+                Sillas en forma de jirafa, elefante y cebra, música safari, libros, juegos, y un equipo de estilistas con paciencia y cariño infinito.
+              </p>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:28 }}>
+                {[['👩‍🎓','Estilistas certificadas'],['🌿','Productos naturales'],['🎭','Ambiente temático'],['🏆','+4 años de magia']].map(([e,t])=>(
+                  <div key={t} className="sticker" style={{ fontSize:13, padding:'10px 14px', boxShadow:'4px 4px 0 var(--ink)' }}>
+                    <span style={{ fontSize:22 }}>{e}</span><span>{t}</span>
+                  </div>
+                ))}
+              </div>
+              <button onClick={handleReservar} className="btn btn-g">🦁 Reservar ahora</button>
             </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ═══════ VALORES ══════════════════════════════════════════════════ */}
+      <section style={{ padding:'120px 24px', background:'var(--ink)', color:'#fff', position:'relative', overflow:'hidden' }}>
+        <div className="spin-slow" style={{ position:'absolute', top:-60, right:-60, fontSize:280, opacity:.05 }}>🦁</div>
+        <div className="spin-r" style={{ position:'absolute', bottom:-80, left:-80, fontSize:320, opacity:.04 }}>🌿</div>
+        <div style={{ maxWidth:1200, margin:'0 auto', position:'relative' }}>
+          <Reveal>
+            <div style={{ textAlign:'center', marginBottom:56 }}>
+              <span className="section-tag" style={{ background:'var(--yellow)' }}>Por qué elegirnos</span>
+              <h2 className="section-title" style={{ color:'#fff' }}>La experiencia <span className="squiggle squiggle--pink" style={{ color:'var(--yellow)' }}>Safari Kids</span></h2>
+            </div>
+          </Reveal>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:24 }}>
+            {VALORES.map((v, i) => (
+              <Reveal key={v.titulo} delay={i * 60}>
+                <div className="card-chunky" style={{ padding:'32px 24px 28px', background:v.color, color:'#fff', border:'4px solid #000', boxShadow:'8px 8px 0 #000', height:'100%', transform:`rotate(${(i%2===0?-1:1)*1}deg)` }}>
+                  <div style={{ width:70, height:70, borderRadius:18, background:'#fff', color:v.color, border:'4px solid var(--ink)', display:'inline-flex', alignItems:'center', justifyContent:'center', marginBottom:18, boxShadow:'4px 4px 0 var(--ink)' }}>
+                    <v.Icon size={36} strokeWidth={2} />
+                  </div>
+                  <h3 style={{ fontFamily:"'Fredoka One',cursive", fontSize:24, marginBottom:8 }}>{v.titulo}</h3>
+                  <p style={{ fontSize:14, lineHeight:1.6, opacity:.95, marginBottom:12 }}>{v.desc}</p>
+                  <div style={{ display:'inline-flex', alignItems:'center', gap:6, background:'rgba(255,255,255,.2)', borderRadius:999, padding:'4px 12px', fontSize:12, fontWeight:800 }}>
+                    <LuStar size={12} />{v.stat}
+                  </div>
+                </div>
+              </Reveal>
+            ))}
           </div>
         </div>
+      </section>
 
-        {/* Dots */}
-        <div style={{ display:'flex', justifyContent:'center', gap:8, marginBottom:40 }}>
-          {TESTIMONIOS.map((_,i) => (
-            <button key={i} onClick={() => setActiveTestimonio(i)} style={{ width: i===activeTestimonio?24:8, height:8, borderRadius:4, border:'none', cursor:'pointer', background: i===activeTestimonio ? '#F9A825':'rgba(255,255,255,.3)', transition:'all .3s' }} />
-          ))}
-        </div>
-
-        {/* Grid */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:16 }}>
-          {TESTIMONIOS.slice(0,3).map((t, i) => (
-            <div key={i} className="testimonial-card" style={{ cursor:'pointer' }} onClick={() => setActiveTestimonio(i)}>
-              <div style={{ display:'flex', gap:4, marginBottom:12, marginTop:16 }}>
-                {'★★★★★'.split('').map((s,j)=><span key={j} style={{ color:'#F9A825', fontSize:14 }}>{s}</span>)}
-              </div>
-              <p style={{ color:'#555', fontSize:13, lineHeight:1.7, marginBottom:16 }}>"{t.texto.substring(0,100)}..."</p>
-              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                <span style={{ fontSize:22 }}>{t.avatar}</span>
-                <div>
-                  <p style={{ fontWeight:700, fontSize:13, color:'#1a2e1a', margin:0 }}>{t.nombre}</p>
-                  <p style={{ fontSize:11, color:'#888', margin:0 }}>{t.ciudad}</p>
+      {/* ═══════ PROCESO ═══════════════════════════════════════════════════ */}
+      <section style={{ padding:'120px 24px', background:'#FFF8E1', position:'relative', overflow:'hidden' }}>
+        <div style={{ maxWidth:1200, margin:'0 auto', position:'relative' }}>
+          <Reveal>
+            <div style={{ textAlign:'center', marginBottom:64 }}>
+              <span className="section-tag">3 pasos. Listo.</span>
+              <h2 className="section-title">Reservar es <span className="squiggle" style={{ color:'var(--orange-d)' }}>facilísimo</span></h2>
+            </div>
+          </Reveal>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:32, position:'relative', zIndex:1 }}>
+            {[
+              { n:1, emoji:'📱', title:'Regístrate', desc:'En 30 segundos con tu correo. ¡Súper rápido!', color:'#FF4F95' },
+              { n:2, emoji:'✂️', title:'Elige tu servicio', desc:'Mira el menú y escoge la aventura.', color:'#38BDF8' },
+              { n:3, emoji:'🗓', title:'Reserva tu cita', desc:'Día, hora y sede. ¡A vivir la magia!', color:'#FFC42E' },
+            ].map((s, i) => (
+              <Reveal key={s.n} delay={i * 150}>
+                <div style={{ background:'#fff', border:'4px solid var(--ink)', borderRadius:24, boxShadow:'8px 8px 0 var(--ink)', padding:28, textAlign:'center', position:'relative', transform:`rotate(${(i-1)*2}deg)` }}>
+                  <div style={{ position:'absolute', top:-30, left:'50%', transform:'translateX(-50%) rotate(-5deg)', width:64, height:64, borderRadius:16, background:s.color, color:'var(--ink)', border:'4px solid var(--ink)', boxShadow:'5px 5px 0 var(--ink)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'Fredoka One',cursive", fontSize:32 }}>{s.n}</div>
+                  <div style={{ fontSize:56, marginTop:22, marginBottom:14 }}>{s.emoji}</div>
+                  <h3 style={{ fontFamily:"'Fredoka One',cursive", fontSize:22, color:'var(--ink)', marginBottom:8 }}>{s.title}</h3>
+                  <p style={{ color:'#555', fontSize:14, lineHeight:1.6 }}>{s.desc}</p>
                 </div>
-              </div>
+              </Reveal>
+            ))}
+          </div>
+          <Reveal delay={400}>
+            <div style={{ textAlign:'center', marginTop:56 }}>
+              <button onClick={handleReservar} className="btn btn-p" style={{ animation:'pulseRing 2s infinite' }}>
+                🦁 ¡Quiero reservar mi cita!
+              </button>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ═══════ CONTADORES ════════════════════════════════════════════════ */}
+      <div ref={statsRef} style={{ background:'var(--ink)', padding:'60px 24px' }}>
+        <div style={{ maxWidth:1000, margin:'0 auto', display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:24 }}>
+          {[
+            { n:c1, s:'+', label:'Familias felices', emoji:'👨‍👧', color:'#FF4F95' },
+            { n:c4, s:'', label:'Años de magia', emoji:'⭐', color:'#FFC42E' },
+            { n:c3, s:'', label:'Sedes en Huancayo', emoji:'📍', color:'#38BDF8' },
+            { n:c2, s:'%', label:'Clientes que repiten', emoji:'💚', color:'#A855F7' },
+          ].map((s,i) => (
+            <div key={s.label} style={{ textAlign:'center', padding:28, background:'rgba(255,255,255,.05)', border:`3px solid ${s.color}`, borderRadius:20, boxShadow:`6px 6px 0 ${s.color}` }}>
+              <div style={{ fontSize:36, marginBottom:8 }}>{s.emoji}</div>
+              <p style={{ fontFamily:"'Fredoka One',cursive", fontSize:52, color:s.color, margin:0, lineHeight:1 }}>{s.n}{s.s}</p>
+              <p style={{ color:'rgba(255,255,255,.7)', fontSize:13, marginTop:8, fontWeight:700 }}>{s.label}</p>
             </div>
           ))}
         </div>
-      </Section>
+      </div>
+
+      {/* ═══════ TESTIMONIOS ═══════════════════════════════════════════════ */}
+      <section id="testimonios" style={{ padding:'120px 24px', background:'var(--paper)', position:'relative', overflow:'hidden' }}>
+        <div className="grid-bg" style={{ position:'absolute', inset:0, opacity:.8, pointerEvents:'none' }} />
+        <div style={{ maxWidth:1200, margin:'0 auto', position:'relative' }}>
+          <Reveal>
+            <div style={{ textAlign:'center', marginBottom:64 }}>
+              <span className="section-tag">Lo que dicen las familias</span>
+              <h2 className="section-title">Más de 500 familias <br/>nos <span className="squiggle squiggle--pink" style={{ color:'var(--pink)' }}>recomiendan</span> 💚</h2>
+            </div>
+          </Reveal>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(320px,1fr))', gap:40 }}>
+            {TESTIMONIOS.map((t, i) => {
+              const rotate = [-2,1.5,-1,2,-1.5,1][i%6]
+              return (
+                <Reveal key={i} delay={i * 60}>
+                  <div style={{ position:'relative', paddingTop:14 }}>
+                    <div className="speech" style={{ '--tail':'54px', transform:`rotate(${rotate}deg)` }}>
+                      <div style={{ display:'flex', gap:2, marginBottom:10 }}>
+                        {'★★★★★'.split('').map((_,j)=><span key={j} style={{ color:'#FFC42E', fontSize:18 }}>★</span>)}
+                      </div>
+                      <p style={{ color:'var(--ink)', fontSize:15, lineHeight:1.7, fontWeight:700 }}>"{t.texto}"</p>
+                    </div>
+                    <div style={{ display:'flex', alignItems:'center', gap:14, marginLeft:18, marginTop:32 }}>
+                      <div style={{ width:56, height:56, borderRadius:'50%', background:t.color, border:'4px solid var(--ink)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, boxShadow:'4px 4px 0 var(--ink)' }}>{t.avatar}</div>
+                      <div>
+                        <div style={{ fontFamily:"'Fredoka One',cursive", fontSize:16, color:'var(--ink)' }}>{t.nombre}</div>
+                        <div style={{ fontFamily:"'Caveat',cursive", fontSize:16, color:'#666' }}>📍 {t.ciudad}</div>
+                      </div>
+                    </div>
+                  </div>
+                </Reveal>
+              )
+            })}
+          </div>
+        </div>
+      </section>
 
       {/* ═══════ GALERÍA ════════════════════════════════════════════════════ */}
-      <Section id="galeria" style={{ background:'#fafaf7' }}>
-        <SectionTitle tag="Galería" title="Momentos mágicos en Safari Kids" sub="Cada visita es una nueva aventura llena de sonrisas y colores." />
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:14 }}>
-          {GALERIA.map((item, i) => (
-            <div key={i} style={{
-              aspectRatio:'1', borderRadius:20, overflow:'hidden',
-              cursor:'pointer', transition:'all .28s',
-              boxShadow:'0 4px 16px rgba(0,0,0,.10)',
-              border:'3px solid transparent',
-            }}
-            onMouseOver={e=>{e.currentTarget.style.transform='scale(1.04)';e.currentTarget.style.borderColor='#F9A825';e.currentTarget.style.boxShadow='0 10px 32px rgba(0,0,0,.18)';}}
-            onMouseOut={e=>{e.currentTarget.style.transform='scale(1)';e.currentTarget.style.borderColor='transparent';e.currentTarget.style.boxShadow='0 4px 16px rgba(0,0,0,.10)';}}>
-              <img
-                src={item.url}
-                alt={item.alt}
-                loading="lazy"
-                style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
-                onError={e => { e.currentTarget.style.display='none'; e.currentTarget.parentElement.style.background='#e8f5e9'; e.currentTarget.parentElement.innerHTML+='<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:48px">🦁</div>' }}
-              />
+      <section id="galeria" style={{ padding:'120px 24px', background:'#FFE8B0', position:'relative', overflow:'hidden' }}>
+        <Leaves count={6} items={['🌸','🦋','✨','🍃']} />
+        <div style={{ maxWidth:1200, margin:'0 auto', position:'relative', zIndex:2 }}>
+          <Reveal>
+            <div style={{ textAlign:'center', marginBottom:64 }}>
+              <span className="section-tag">Galería</span>
+              <h2 className="section-title">Momentos <span className="squiggle squiggle--sky" style={{ color:'var(--sky-d)' }}>mágicos</span></h2>
             </div>
-          ))}
-        </div>
-        <p style={{ textAlign:'center', color:'#888', fontSize:13, marginTop:24 }}>
-          📸 Síguenos en Instagram <strong>@safarikids.huancayo</strong> para más momentos especiales
-        </p>
-      </Section>
-
-      {/* ═══════ SUCURSALES ═════════════════════════════════════════════════ */}
-      <Section id="sucursales" style={{ background:'#fff' }}>
-        <SectionTitle tag="Nuestras sedes" title="Encuéntranos en Huancayo" sub="3 sucursales para que siempre tengas una sede cerca de ti." />
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))', gap:24 }}>
-          {SUCURSALES.map((s, i) => (
-            <div key={s.nombre} className="sucursal-card">
-              <div style={{ background:`linear-gradient(135deg,${s.color},${s.color}cc)`, padding:'28px', textAlign:'center' }}>
-                <div style={{ fontSize:56, marginBottom:8 }}>{s.emoji}</div>
-                <h3 style={{ fontFamily:"'Fredoka One',cursive", fontSize:20, color:'#fff', margin:'0 0 4px' }}>{s.nombre.replace('Safari Kids - ','')}</h3>
-                <span style={{ background:'rgba(255,255,255,.2)', color:'#fff', padding:'4px 12px', borderRadius:20, fontSize:12, fontWeight:700 }}>{s.zona}</span>
-              </div>
-              <div style={{ padding:'24px' }}>
-                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-                  {[['📍',s.direccion],['📞',s.telefono],['🕐',s.horario],['⭐',s.especialidad]].map(([ico,val])=>(
-                    <div key={val} style={{ display:'flex', gap:10, alignItems:'flex-start' }}>
-                      <span style={{ fontSize:16, flexShrink:0 }}>{ico}</span>
-                      <span style={{ fontSize:13, color:'#555', lineHeight:1.5 }}>{val}</span>
+          </Reveal>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))', gap:28 }}>
+            {GALLERY.map((p,i) => {
+              const rotations = [-6,4,-3,5,-5,3,-4,6]
+              return (
+                <Reveal key={i} delay={i * 50}>
+                  <div className="polaroid tilt" style={{ transform:`rotate(${rotations[i%8]}deg)`, position:'relative' }}>
+                    <div style={{ position:'absolute', top:-10, left:'50%', transform:'translateX(-50%) rotate(-3deg)', width:60, height:22, background:'rgba(255,196,46,.7)', border:'1px dashed rgba(0,0,0,.2)' }} />
+                    <div style={{ width:'100%', aspectRatio:'1', borderRadius:4, overflow:'hidden', background:'#e8f5e9' }}>
+                      <img src={p.img} alt={p.caption} loading="lazy" style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
+                        onError={e => { e.currentTarget.style.display='none'; e.currentTarget.parentElement.style.display='flex'; e.currentTarget.parentElement.style.alignItems='center'; e.currentTarget.parentElement.style.justifyContent='center'; e.currentTarget.parentElement.innerHTML='<span style="font-size:60px">🦁</span>' }} />
                     </div>
-                  ))}
-                </div>
-                <div style={{ display:'flex', gap:10, marginTop:20 }}>
-                  <a href={s.maps} target="_blank" rel="noopener noreferrer" style={{
-                    flex:1, background:s.bg, color:s.color, textDecoration:'none',
-                    borderRadius:10, padding:'10px', textAlign:'center',
-                    fontWeight:700, fontSize:13, border:`1.5px solid ${s.color}33`,
-                  }}>📍 Ver mapa</a>
-                  <button onClick={handleReservar} style={{
-                    flex:1, background:s.color, color:'#fff', border:'none',
-                    borderRadius:10, padding:'10px', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit',
-                  }}>🗓 Reservar</button>
-                </div>
+                    <div style={{ fontFamily:"'Caveat',cursive", fontSize:22, color:'var(--ink)', textAlign:'center', marginTop:8 }}>{p.caption}</div>
+                  </div>
+                </Reveal>
+              )
+            })}
+          </div>
+          <Reveal delay={300}>
+            <div style={{ textAlign:'center', marginTop:56 }}>
+              <div className="sticker" style={{ display:'inline-flex' }}>
+                <span style={{ fontSize:24 }}>📸</span>
+                <span>Síguenos en <strong style={{ color:'var(--pink)' }}>@safarikids.huancayo</strong></span>
               </div>
             </div>
-          ))}
+          </Reveal>
         </div>
-      </Section>
+      </section>
 
-      {/* ═══════ CONTACTO ═══════════════════════════════════════════════════ */}
-      <Section id="contacto" style={{ background:'linear-gradient(135deg,#1b5e20,#2E7D32)' }}>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center' }}>
-          <div>
-            <SectionTitle tag="Contacto" title="¿Tienes alguna duda?" light center={false} />
-            <p style={{ color:'rgba(255,255,255,.8)', fontSize:16, lineHeight:1.8, marginBottom:32 }}>
-              Estamos aquí para ayudarte. Contáctanos por cualquiera de estos medios y te responderemos lo antes posible.
-            </p>
-            {[
-              ['📞','Teléfono principal','(064) 234-567'],
-              ['📧','Correo electrónico','hola@safarikids.com'],
-              ['📱','WhatsApp','964 123 456'],
-              ['📍','Sede principal','Jr. Ayacucho 456, Huancayo'],
-            ].map(([e,l,v]) => (
-              <div key={l} style={{ display:'flex', gap:14, alignItems:'center', padding:'14px 0', borderBottom:'1px solid rgba(255,255,255,.1)' }}>
-                <div style={{ width:44, height:44, borderRadius:'50%', background:'rgba(255,255,255,.12)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>{e}</div>
-                <div>
-                  <p style={{ color:'rgba(255,255,255,.6)', fontSize:11, margin:0, textTransform:'uppercase', letterSpacing:1 }}>{l}</p>
-                  <p style={{ color:'#fff', fontWeight:700, fontSize:15, margin:0 }}>{v}</p>
+      {/* ═══════ SEDES ══════════════════════════════════════════════════════ */}
+      <section id="sedes" style={{ padding:'120px 24px', background:'var(--paper)' }}>
+        <div style={{ maxWidth:1200, margin:'0 auto' }}>
+          <Reveal>
+            <div style={{ textAlign:'center', marginBottom:64 }}>
+              <span className="section-tag">Nuestras sedes</span>
+              <h2 className="section-title">Encuéntranos en <br/><span className="squiggle" style={{ color:'var(--orange-d)' }}>Huancayo</span> 🗺️</h2>
+            </div>
+          </Reveal>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))', gap:28 }}>
+            {SEDES.map((s, i) => (
+              <Reveal key={s.nombre} delay={i * 100}>
+                <div className="card-chunky tilt" style={{ overflow:'visible', transform:`rotate(${(i-1)*1.5}deg)` }}>
+                  <div style={{ background:s.color, color:'#fff', padding:'28px 24px 80px', textAlign:'center', position:'relative', borderBottom:'4px solid var(--ink)', overflow:'hidden' }}>
+                    <div style={{ position:'absolute', top:40, left:'50%', transform:'translateX(-50%)', width:110, height:110, borderRadius:'50%', background:'rgba(255,255,255,.2)', border:'4px solid #fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:64 }}>{s.emoji}</div>
+                    <div style={{ marginTop:130 }}>
+                      <h3 style={{ fontFamily:"'Fredoka One',cursive", fontSize:22 }}>Safari Kids · {s.nombre}</h3>
+                      <div style={{ display:'inline-block', background:'rgba(255,255,255,.25)', padding:'4px 14px', borderRadius:999, fontSize:12, fontWeight:800, letterSpacing:1, marginTop:6 }}>{s.zona.toUpperCase()}</div>
+                    </div>
+                  </div>
+                  <div style={{ position:'absolute', top:212, left:'50%', transform:'translateX(-50%) rotate(45deg)', width:36, height:36, background:s.color, border:'4px solid var(--ink)', borderTop:'none', borderLeft:'none', zIndex:2 }} />
+                  <div style={{ padding:'40px 24px 24px', background:'#fff' }}>
+                    <div style={{ background:'#FFF8E1', padding:'8px 14px', borderRadius:999, fontFamily:"'Caveat',cursive", fontSize:16, color:'var(--ink)', border:`2px dashed ${s.color}`, textAlign:'center', marginBottom:18 }}>✨ {s.tag}</div>
+                    <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                      {[['📍',s.direccion],['📞',s.telefono],['🕐',s.horario]].map(([ico,val])=>(
+                        <div key={val} style={{ display:'flex', alignItems:'center', gap:10 }}>
+                          <span style={{ width:32, height:32, borderRadius:8, background:s.color, color:'#fff', display:'inline-flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0, border:'2px solid var(--ink)' }}>{ico}</span>
+                          <span style={{ fontSize:14, color:'var(--ink)', fontWeight:700 }}>{val}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={handleReservar} style={{ display:'block', width:'100%', textAlign:'center', marginTop:20, background:s.color, color:'#fff', padding:'14px', borderRadius:12, fontFamily:"'Fredoka One',cursive", fontSize:16, border:'3px solid var(--ink)', boxShadow:'4px 4px 0 var(--ink)', cursor:'pointer' }}>
+                      🗓 Reservar en esta sede
+                    </button>
+                  </div>
                 </div>
-              </div>
+              </Reveal>
             ))}
-          </div>
-          <div style={{ background:'rgba(255,255,255,.08)', backdropFilter:'blur(12px)', borderRadius:28, padding:36, border:'2px solid rgba(255,255,255,.15)' }}>
-            <h3 style={{ fontFamily:"'Fredoka One',cursive", fontSize:24, color:'#F9A825', marginBottom:24 }}>Envíanos un mensaje</h3>
-            {['Tu nombre completo','Tu correo electrónico','Tu teléfono (opcional)'].map(p => (
-              <input key={p} placeholder={p} style={{ width:'100%', background:'rgba(255,255,255,.1)', border:'1.5px solid rgba(255,255,255,.2)', borderRadius:12, padding:'12px 16px', color:'#fff', fontSize:14, marginBottom:12, outline:'none', fontFamily:'inherit' }} />
-            ))}
-            <textarea placeholder="Tu mensaje..." rows={4} style={{ width:'100%', background:'rgba(255,255,255,.1)', border:'1.5px solid rgba(255,255,255,.2)', borderRadius:12, padding:'12px 16px', color:'#fff', fontSize:14, marginBottom:16, outline:'none', resize:'vertical', fontFamily:'inherit' }} />
-            <button className="btn-jungle btn-jungle-yellow" style={{ width:'100%', justifyContent:'center' }}>
-              📨 Enviar mensaje
-            </button>
-          </div>
-        </div>
-      </Section>
-
-      {/* ═══════ CTA FINAL ══════════════════════════════════════════════════ */}
-      <section style={{ background:'#F9A825', padding:'80px 24px', textAlign:'center', position:'relative', overflow:'hidden' }}>
-        <FloatingParticles />
-        <div style={{ position:'relative', zIndex:1 }}>
-          <div style={{ fontSize:72, marginBottom:16 }} className="anim-roar">🦁</div>
-          <h2 style={{ fontFamily:"'Fredoka One',cursive", fontSize:'clamp(32px,4vw,52px)', color:'#1b2a1b', margin:'0 0 16px', letterSpacing:'-0.5px' }}>
-            ¡Tu hijo merece la mejor aventura!
-          </h2>
-          <p style={{ color:'rgba(27,42,27,.7)', fontSize:17, maxWidth:500, margin:'0 auto 36px', lineHeight:1.7 }}>
-            Reserva su cita hoy y que viva la magia de Safari Kids. ¡Primera cita con 10% de descuento!
-          </p>
-          <div style={{ display:'flex', gap:16, justifyContent:'center', flexWrap:'wrap' }}>
-            <button onClick={handleReservar} className="btn-jungle btn-jungle-green" style={{ fontSize:20 }}>
-              🗓 Reservar ahora — ¡Es gratis!
-            </button>
-            <Link to="/servicios" className="btn-jungle" style={{ background:'rgba(27,42,27,.1)', color:'#1b2a1b', textDecoration:'none' }}>
-              Ver todos los servicios
-            </Link>
           </div>
         </div>
       </section>
 
-      {/* ═══════ FOOTER ═════════════════════════════════════════════════════ */}
-      <footer style={{ background:'#0d2a0f', color:'rgba(255,255,255,.65)', padding:'56px 24px 32px' }}>
-        <div style={{ maxWidth:1160, margin:'0 auto' }}>
-          <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr', gap:48, marginBottom:48 }}>
+      {/* ═══════ CTA FINAL ══════════════════════════════════════════════════ */}
+      <section id="reservar" style={{ padding:'100px 24px 120px', background:'linear-gradient(135deg,#FF4F95 0%,#FF6F3C 50%,#FFC42E 100%)', position:'relative', overflow:'hidden', textAlign:'center' }}>
+        <div className="spin-r" style={{ position:'absolute', top:40, left:40, fontSize:80, opacity:.3 }}>🌟</div>
+        <div className="spin-slow" style={{ position:'absolute', top:80, right:60, fontSize:64, opacity:.3 }}>✨</div>
+        <div className="float" style={{ position:'absolute', bottom:40, left:'15%', fontSize:70, opacity:.4 }}>🎈</div>
+        <div className="float-l" style={{ position:'absolute', bottom:80, right:'12%', fontSize:80, opacity:.4 }}>🎉</div>
+        <div style={{ maxWidth:800, margin:'0 auto', position:'relative', zIndex:2 }}>
+          <Reveal>
+            <div className="roar" style={{ fontSize:120, marginBottom:12, display:'inline-block', filter:'drop-shadow(6px 6px 0 rgba(0,0,0,.2))' }}>🦁</div>
+            <h2 style={{ fontFamily:"'Fredoka One',cursive", fontSize:'clamp(40px,6vw,72px)', color:'#fff', lineHeight:1, marginBottom:18, textShadow:'4px 4px 0 var(--ink)' }}>
+              ¡La aventura te <br/>está esperando!
+            </h2>
+            <p style={{ color:'#fff', fontSize:19, marginBottom:36, fontWeight:700, maxWidth:540, margin:'0 auto 36px' }}>
+              Reserva hoy y tu peque vive la magia.{' '}
+              <span className="stamp" style={{ marginTop:12, background:'#fff' }}>🎁 Primera cita con 10% OFF</span>
+            </p>
+            <div style={{ display:'flex', gap:14, justifyContent:'center', flexWrap:'wrap' }}>
+              <button onClick={handleReservar} className="btn btn-y" style={{ fontSize:22, padding:'20px 40px' }}>🗓 Reservar gratis →</button>
+              <Link to="/servicios" className="btn btn-w" style={{ textDecoration:'none' }}>Ver todos los servicios</Link>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ═══════ FOOTER ══════════════════════════════════════════════════════ */}
+      <footer id="contacto" style={{ background:'var(--ink)', color:'rgba(255,255,255,.7)', padding:'60px 24px 30px', position:'relative', overflow:'hidden' }}>
+        <div className="spin-slow" style={{ position:'absolute', top:-40, right:-40, fontSize:220, opacity:.04 }}>🌿</div>
+        <div style={{ maxWidth:1200, margin:'0 auto', position:'relative' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr', gap:40, marginBottom:40 }} className="two-col">
             <div>
-              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
-                <span style={{ fontSize:32 }}>🦁</span>
+              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14 }}>
+                <span style={{ fontSize:40 }} className="roar">🦁</span>
                 <div>
-                  <span style={{ fontFamily:"'Fredoka One',cursive", fontSize:20, color:'#F9A825' }}>Safari</span>
-                  <span style={{ fontFamily:"'Fredoka One',cursive", fontSize:20, color:'#fff' }}>Kids</span>
+                  <div style={{ fontFamily:"'Fredoka One',cursive", fontSize:24, color:'#fff' }}>Safari<span style={{ color:'var(--pink)' }}>Kids</span></div>
+                  <div style={{ fontFamily:"'Caveat',cursive", fontSize:16, color:'var(--yellow)' }}>¡cortes con magia!</div>
                 </div>
               </div>
-              <p style={{ fontSize:13, lineHeight:1.8, maxWidth:240 }}>Peluquería especializada en niños. Hacemos de cada corte una aventura mágica.</p>
+              <p style={{ fontSize:13, lineHeight:1.7, maxWidth:280 }}>Peluquería especializada en niños. Hacemos de cada corte una aventura inolvidable. Huancayo · Perú.</p>
+              <div style={{ display:'flex', gap:8, marginTop:18 }}>
+                {[['📘','Facebook'],['📸','Instagram'],['🎵','TikTok'],['🎬','YouTube']].map(([e,l])=>(
+                  <a key={l} href="#" title={l} style={{ width:40,height:40,borderRadius:12,background:'rgba(255,255,255,.08)',border:'2px solid rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',textDecoration:'none',fontSize:18,transition:'all .15s' }}
+                    onMouseOver={e2=>{e2.currentTarget.style.background='var(--pink)';e2.currentTarget.style.transform='rotate(-6deg) scale(1.08)'}}
+                    onMouseOut={e2=>{e2.currentTarget.style.background='rgba(255,255,255,.08)';e2.currentTarget.style.transform='none'}}>{e}</a>
+                ))}
+              </div>
             </div>
             {[
-              { title:'Servicios', links:['Corte Infantil','Tinte & Color','Lavado & Peinado','Spa Capilar','Paquete Primera Vez'] },
-              { title:'La Empresa', links:['Quiénes somos','Nuestro equipo','Sucursales','Trabaja con nosotros'] },
-              { title:'Contacto', links:['(064) 234-567','hola@safarikids.com','WhatsApp: 964 123 456','Jr. Ayacucho 456'] },
-            ].map(col => (
+              { title:'Servicios', items:['Corte Aventurero','Tintes de Fantasía','Spa Selva Mágica','Fiesta Safari'] },
+              { title:'Empresa', items:['Quiénes somos','Sucursales','Trabaja con nosotros','Blog'] },
+              { title:'Contacto', items:['(064) 234-567','hola@safarikids.com','WhatsApp: 964 123 456','Jr. Ayacucho 456'] },
+            ].map(col=>(
               <div key={col.title}>
-                <h4 style={{ color:'#fff', fontWeight:800, marginBottom:14, fontSize:14 }}>{col.title}</h4>
-                {col.links.map(l => <p key={l} style={{ fontSize:13, marginBottom:6, cursor:'pointer', transition:'color .2s' }} onMouseOver={e=>e.target.style.color='#F9A825'} onMouseOut={e=>e.target.style.color='rgba(255,255,255,.65)'}>{l}</p>)}
+                <h4 style={{ color:'var(--yellow)', fontFamily:"'Fredoka One',cursive", fontSize:18, marginBottom:14 }}>{col.title}</h4>
+                {col.items.map(it=>(
+                  <a key={it} href="#" style={{ display:'block',fontSize:13,marginBottom:8,color:'rgba(255,255,255,.7)',textDecoration:'none',transition:'all .15s' }}
+                    onMouseOver={e=>{e.currentTarget.style.color='var(--yellow)';e.currentTarget.style.transform='translateX(4px)'}}
+                    onMouseOut={e=>{e.currentTarget.style.color='rgba(255,255,255,.7)';e.currentTarget.style.transform='none'}}>{it}</a>
+                ))}
               </div>
             ))}
           </div>
-          <div style={{ borderTop:'1px solid rgba(255,255,255,.1)', paddingTop:24, display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:12 }}>
-            <p style={{ fontSize:12 }}>© 2024 Safari Kids · Todos los derechos reservados · Huancayo, Perú</p>
-            <div style={{ display:'flex', gap:12 }}>
-              {['📘 Facebook','📸 Instagram','🎵 TikTok'].map(s => <span key={s} style={{ fontSize:12, cursor:'pointer', transition:'color .2s' }} onMouseOver={e=>e.target.style.color='#F9A825'} onMouseOut={e=>e.target.style.color='rgba(255,255,255,.65)'}>{s}</span>)}
-            </div>
+          <div style={{ borderTop:'2px dashed rgba(255,255,255,.15)', paddingTop:22, display:'flex', justifyContent:'space-between', flexWrap:'wrap', gap:12, alignItems:'center' }}>
+            <span style={{ fontSize:12 }}>© 2026 Safari Kids · Hecho con 💚 en Huancayo</span>
+            <span style={{ fontFamily:"'Caveat',cursive", fontSize:18, color:'var(--yellow)' }}>¡Gracias por elegirnos! 🦁</span>
           </div>
         </div>
       </footer>
     </div>
   )
 }
-

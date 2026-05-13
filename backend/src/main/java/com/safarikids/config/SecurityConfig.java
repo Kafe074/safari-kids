@@ -50,7 +50,7 @@ public class SecurityConfig {
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/productos/**", "/api/servicios/**", "/api/categoria-productos/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/productos/**", "/api/servicios/**", "/api/categoria-productos/**", "/api/horarios/**", "/api/asientos/**").permitAll()
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authProvider())

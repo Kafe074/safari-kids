@@ -1,14 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { reservasApi } from '../../api/reservas'
 import { useAuth } from '../../context/AuthContext'
-import PageHeader from '../../components/common/PageHeader'
 import StatCard from '../../components/common/StatCard'
 import toast from 'react-hot-toast'
+import {
+  LuCalendar,
+  LuClock,
+  LuCircleCheck,
+  LuChartBar,
+  LuX,
+  LuScissors,
+  LuUser,
+} from 'react-icons/lu'
 
-const BADGE = {
-  Pendiente:  { bg:'#fff8e1', color:'#f57f17', label:'Pendiente' },
-  Confirmado: { bg:'#e8f5e9', color:'#2E7D32', label:'Atendido ✓' },
-  Cancelado:  { bg:'#ffebee', color:'#c62828', label:'Cancelado' },
+const BADGE_STYLE = {
+  Pendiente:  { background: '#FFC42E', color: '#2B1B00', border: '3px solid #2B1B00', label: 'Pendiente' },
+  Confirmado: { background: '#1B7A3E', color: '#fff',    border: '3px solid #0F5527', label: 'Atendido' },
+  Cancelado:  { background: '#FF4F95', color: '#fff',    border: '3px solid #C42E72', label: 'Cancelado'  },
 }
 
 export default function EmpleadoHome() {
@@ -23,7 +31,7 @@ export default function EmpleadoHome() {
 
   const confirmarMut = useMutation({
     mutationFn: (id) => reservasApi.confirmar(id),
-    onSuccess: () => { qc.invalidateQueries(['mis-asignadas']); toast.success('Marcado como atendido ✅') },
+    onSuccess: () => { qc.invalidateQueries(['mis-asignadas']); toast.success('Marcado como atendido') },
     onError:   () => toast.error('Error al actualizar'),
   })
   const cancelarMut = useMutation({
@@ -38,81 +46,223 @@ export default function EmpleadoHome() {
   const proximas      = reservas.filter(r => r.fechaReserva > hoy)
     .sort((a, b) => a.fechaReserva > b.fechaReserva ? 1 : -1)
 
-  return (
-    <div>
-      <PageHeader
-        title={`Bienvenido, ${user?.nombreCompleto?.split(' ')[0] ?? 'Estilista'} 👋`}
-        subtitle={`Tu agenda del día · ${new Date().toLocaleDateString('es-PE', { weekday:'long', day:'numeric', month:'long' })}`}
-      />
+  const nombre = user?.nombreCompleto?.split(' ')[0] ?? 'Estilista'
+  const fechaLarga = new Date().toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' })
 
-      {/* Stats */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(170px,1fr))', gap:16, marginBottom:28 }}>
-        <StatCard icon="📅" label="Citas hoy"      value={hoyReservas.length}   bg="#e8f5e9" />
-        <StatCard icon="⏳" label="Por atender"     value={pendientesHoy.length} bg="#fff8e1" />
-        <StatCard icon="✅" label="Atendidos hoy"   value={atendidosHoy.length}  bg="#e0f7fa" />
-        <StatCard icon="📋" label="Próximas citas"  value={proximas.length}      bg="#f3e5f5" />
+  return (
+    <div style={{ background: 'var(--paper)', minHeight: '100vh', padding: 24 }}>
+
+      {/* ── Welcome hero ── */}
+      <div
+        className="card-chunky"
+        style={{
+          background: 'linear-gradient(135deg, #1B7A3E 0%, #33A957 60%, #4CAF50 100%)',
+          padding: '32px 36px',
+          marginBottom: 28,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 20,
+        }}
+      >
+        <div style={{
+          width: 64, height: 64, borderRadius: '50%',
+          background: 'rgba(255,255,255,.2)',
+          border: '4px solid rgba(255,255,255,.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          <LuScissors size={30} color="#fff" />
+        </div>
+        <div>
+          <h1 style={{
+            fontFamily: "'Fredoka One', cursive",
+            fontSize: 'clamp(28px, 4vw, 42px)',
+            color: '#fff',
+            margin: 0,
+            lineHeight: 1.1,
+          }}>
+            Hola, {nombre}!
+          </h1>
+          <p style={{
+            fontFamily: "'Caveat', cursive",
+            fontSize: 20,
+            color: 'rgba(255,255,255,.85)',
+            margin: '4px 0 0',
+            fontWeight: 700,
+            textTransform: 'capitalize',
+          }}>
+            {fechaLarga}
+          </p>
+        </div>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
+      {/* ── Stats row ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 16, marginBottom: 28 }}>
+        <StatCard
+          icon={<LuCalendar size={26} color="#1B7A3E" />}
+          label="Citas hoy"
+          value={hoyReservas.length}
+          bg="#C5EBC9"
+        />
+        <StatCard
+          icon={<LuClock size={26} color="#E89E0D" />}
+          label="Por atender"
+          value={pendientesHoy.length}
+          bg="#FFF8E1"
+        />
+        <StatCard
+          icon={<LuCircleCheck size={26} color="#0EA5E9" />}
+          label="Atendidos hoy"
+          value={atendidosHoy.length}
+          bg="#E0F2FE"
+        />
+        <StatCard
+          icon={<LuChartBar size={26} color="#A855F7" />}
+          label="Próximas citas"
+          value={proximas.length}
+          bg="#F3E8FF"
+        />
+      </div>
 
-        {/* Agenda de hoy */}
-        <div style={{ background:'#fff', borderRadius:16, border:'1px solid #f0f0f0', overflow:'hidden' }}>
-          <div style={{ padding:'16px 20px', borderBottom:'1px solid #f5f5f5', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-            <h3 style={{ fontWeight:800, fontSize:15, color:'#1a2e1a', margin:0 }}>📅 Clientes de hoy</h3>
-            <span style={{ background:'#e8f5e9', color:'#2E7D32', borderRadius:20, padding:'2px 10px', fontSize:12, fontWeight:700 }}>{hoyReservas.length}</span>
+      {/* ── Two-column grid ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }} className="two-col">
+
+        {/* ── LEFT: Clientes de hoy ── */}
+        <div className="card-chunky" style={{ overflow: 'hidden' }}>
+          {/* Panel header */}
+          <div style={{
+            padding: '14px 20px',
+            background: 'linear-gradient(135deg, #1B7A3E, #33A957)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <span style={{
+              fontFamily: "'Fredoka One', cursive",
+              fontSize: 18,
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}>
+              <LuCalendar size={20} color="#FFC42E" />
+              Clientes de hoy
+            </span>
+            {/* Count badge — sticker style */}
+            <span style={{
+              background: '#FFC42E',
+              color: '#2B1B00',
+              border: '3px solid #2B1B00',
+              borderRadius: 999,
+              padding: '2px 12px',
+              fontFamily: "'Fredoka One', cursive",
+              fontSize: 16,
+              boxShadow: '3px 3px 0 #2B1B00',
+            }}>
+              {hoyReservas.length}
+            </span>
           </div>
 
           {isLoading ? (
-            <p style={{ padding:24, textAlign:'center', color:'#aaa' }}>Cargando agenda...</p>
+            <p style={{ padding: 32, textAlign: 'center', color: '#aaa', fontFamily: "'Caveat',cursive", fontSize: 18 }}>
+              Cargando agenda...
+            </p>
           ) : hoyReservas.length === 0 ? (
-            <div style={{ padding:32, textAlign:'center' }}>
-              <div style={{ fontSize:36, marginBottom:8 }}>🌴</div>
-              <p style={{ color:'#aaa', fontSize:14 }}>Sin citas programadas para hoy</p>
+            <div style={{ padding: 40, textAlign: 'center' }}>
+              <LuScissors size={40} color="#ccc" style={{ marginBottom: 10 }} />
+              <p style={{ color: '#aaa', fontFamily: "'Caveat',cursive", fontSize: 18 }}>Sin citas programadas para hoy</p>
             </div>
           ) : (
             <div>
               {hoyReservas
                 .sort((a, b) => (a.horario?.horaInicio ?? '') > (b.horario?.horaInicio ?? '') ? 1 : -1)
                 .map(r => {
-                  const badge = BADGE[r.estado] ?? BADGE.Pendiente
+                  const badge = BADGE_STYLE[r.estado] ?? BADGE_STYLE.Pendiente
                   return (
-                    <div key={r.idReserva} style={{ padding:'14px 20px', borderBottom:'1px solid #fafafa' }}>
-                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
-                        <div>
-                          <p style={{ fontWeight:800, fontSize:14, margin:'0 0 2px', color:'#1a2e1a' }}>
+                    <div
+                      key={r.idReserva}
+                      style={{
+                        padding: '14px 20px',
+                        borderBottom: '3px solid #f5f0e8',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{
+                            fontWeight: 900,
+                            fontSize: 15,
+                            margin: '0 0 4px',
+                            color: 'var(--ink)',
+                            fontFamily: "'Nunito', sans-serif",
+                          }}>
                             {r.cliente?.usuario?.nombres} {r.cliente?.usuario?.apellidos}
                           </p>
-                          <p style={{ fontSize:12, color:'#888', margin:0 }}>
-                            ⏰ {r.horario?.horaInicio ?? '—'} &nbsp;·&nbsp; 💺 {r.asiento?.nombre ?? '—'}
-                          </p>
+                          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#666', fontWeight: 800 }}>
+                              <LuClock size={13} color="#E89E0D" />
+                              {r.horario?.horaInicio ?? '—'}
+                            </span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#666', fontWeight: 800 }}>
+                              <LuUser size={13} color="#A855F7" />
+                              {r.asiento?.nombre ?? '—'}
+                            </span>
+                          </div>
                           {r.observaciones && (
-                            <p style={{ fontSize:11, color:'#aaa', margin:'3px 0 0', fontStyle:'italic' }}>{r.observaciones}</p>
+                            <p style={{ fontSize: 11, color: '#aaa', margin: '4px 0 0', fontStyle: 'italic' }}>
+                              {r.observaciones}
+                            </p>
                           )}
                         </div>
-                        <span style={{ background:badge.bg, color:badge.color, padding:'3px 10px', borderRadius:20, fontSize:11, fontWeight:700, flexShrink:0, marginLeft:8 }}>
+                        {/* Estado badge — chunky */}
+                        <span style={{
+                          ...badge,
+                          padding: '4px 12px',
+                          borderRadius: 999,
+                          fontSize: 11,
+                          fontWeight: 900,
+                          boxShadow: '3px 3px 0 var(--ink)',
+                          flexShrink: 0,
+                          marginLeft: 10,
+                          fontFamily: "'Nunito', sans-serif",
+                        }}>
                           {badge.label}
                         </span>
                       </div>
 
-                      {/* Botones de acción */}
+                      {/* Action buttons */}
                       {r.estado === 'Pendiente' && (
-                        <div style={{ display:'flex', gap:8, marginTop:6 }}>
+                        <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                           <button
+                            className="btn btn-g"
                             onClick={() => confirmarMut.mutate(r.idReserva)}
                             disabled={confirmarMut.isPending}
-                            style={{ flex:1, background:'#2E7D32', color:'#fff', border:'none', borderRadius:8, padding:'7px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
-                            ✅ Marcar como atendido
+                            style={{ flex: 1, padding: '8px 12px', fontSize: 13, borderRadius: 12 }}
+                          >
+                            <LuCircleCheck size={15} />
+                            Marcar atendido
                           </button>
                           <button
+                            className="btn btn-p"
                             onClick={() => { if (confirm('¿Cancelar esta reserva?')) cancelarMut.mutate(r.idReserva) }}
                             disabled={cancelarMut.isPending}
-                            style={{ background:'#ffebee', color:'#c62828', border:'none', borderRadius:8, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
-                            ✕
+                            style={{ padding: '8px 12px', fontSize: 13, borderRadius: 12 }}
+                          >
+                            <LuX size={15} />
                           </button>
                         </div>
                       )}
                       {r.estado === 'Confirmado' && (
-                        <p style={{ fontSize:11, color:'#2E7D32', fontWeight:700, margin:'6px 0 0' }}>✓ Servicio completado</p>
+                        <p style={{
+                          fontSize: 12,
+                          color: '#1B7A3E',
+                          fontWeight: 900,
+                          margin: '6px 0 0',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}>
+                          <LuCircleCheck size={14} /> Servicio completado
+                        </p>
                       )}
                     </div>
                   )
@@ -121,34 +271,98 @@ export default function EmpleadoHome() {
           )}
         </div>
 
-        {/* Próximas reservas */}
-        <div style={{ background:'#fff', borderRadius:16, border:'1px solid #f0f0f0', overflow:'hidden' }}>
-          <div style={{ padding:'16px 20px', borderBottom:'1px solid #f5f5f5', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-            <h3 style={{ fontWeight:800, fontSize:15, color:'#1a2e1a', margin:0 }}>📋 Próximas citas</h3>
-            <span style={{ background:'#f3e5f5', color:'#6a1b9a', borderRadius:20, padding:'2px 10px', fontSize:12, fontWeight:700 }}>{proximas.length}</span>
+        {/* ── RIGHT: Próximas citas ── */}
+        <div className="card-chunky" style={{ overflow: 'hidden' }}>
+          {/* Panel header — purple */}
+          <div style={{
+            padding: '14px 20px',
+            background: 'linear-gradient(135deg, #7E22CE, #A855F7)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <span style={{
+              fontFamily: "'Fredoka One', cursive",
+              fontSize: 18,
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}>
+              <LuChartBar size={20} color="#FFC42E" />
+              Próximas citas
+            </span>
+            <span style={{
+              background: '#FFC42E',
+              color: '#2B1B00',
+              border: '3px solid #2B1B00',
+              borderRadius: 999,
+              padding: '2px 12px',
+              fontFamily: "'Fredoka One', cursive",
+              fontSize: 16,
+              boxShadow: '3px 3px 0 #2B1B00',
+            }}>
+              {proximas.length}
+            </span>
           </div>
+
           {proximas.length === 0 ? (
-            <div style={{ padding:32, textAlign:'center' }}>
-              <div style={{ fontSize:36, marginBottom:8 }}>📭</div>
-              <p style={{ color:'#aaa', fontSize:14 }}>Sin citas próximas</p>
+            <div style={{ padding: 40, textAlign: 'center' }}>
+              <LuCalendar size={40} color="#ccc" style={{ marginBottom: 10 }} />
+              <p style={{ color: '#aaa', fontFamily: "'Caveat',cursive", fontSize: 18 }}>Sin citas próximas</p>
             </div>
           ) : (
-            <div style={{ maxHeight:420, overflowY:'auto' }}>
-              {proximas.map(r => (
-                <div key={r.idReserva} style={{ padding:'12px 20px', borderBottom:'1px solid #fafafa', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                  <div>
-                    <p style={{ fontWeight:700, fontSize:14, margin:'0 0 2px', color:'#1a2e1a' }}>
-                      {r.cliente?.usuario?.nombres} {r.cliente?.usuario?.apellidos}
-                    </p>
-                    <p style={{ fontSize:12, color:'#888', margin:0 }}>
-                      📅 {r.fechaReserva} &nbsp;·&nbsp; ⏰ {r.horario?.horaInicio ?? '—'}
-                    </p>
+            <div style={{ maxHeight: 420, overflowY: 'auto' }}>
+              {proximas.map(r => {
+                const badge = BADGE_STYLE[r.estado] ?? BADGE_STYLE.Pendiente
+                return (
+                  <div
+                    key={r.idReserva}
+                    style={{
+                      padding: '12px 20px',
+                      borderBottom: '3px solid #f5f0e8',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: 12,
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{
+                        fontWeight: 900,
+                        fontSize: 14,
+                        margin: '0 0 4px',
+                        color: 'var(--ink)',
+                        fontFamily: "'Nunito', sans-serif",
+                      }}>
+                        {r.cliente?.usuario?.nombres} {r.cliente?.usuario?.apellidos}
+                      </p>
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#666', fontWeight: 800 }}>
+                          <LuCalendar size={12} color="#A855F7" />
+                          {r.fechaReserva}
+                        </span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#666', fontWeight: 800 }}>
+                          <LuClock size={12} color="#E89E0D" />
+                          {r.horario?.horaInicio ?? '—'}
+                        </span>
+                      </div>
+                    </div>
+                    <span style={{
+                      ...badge,
+                      padding: '3px 10px',
+                      borderRadius: 999,
+                      fontSize: 11,
+                      fontWeight: 900,
+                      boxShadow: '3px 3px 0 var(--ink)',
+                      flexShrink: 0,
+                      fontFamily: "'Nunito', sans-serif",
+                    }}>
+                      {r.estado}
+                    </span>
                   </div>
-                  <span style={{ ...(BADGE[r.estado]??BADGE.Pendiente), background:(BADGE[r.estado]??BADGE.Pendiente).bg, color:(BADGE[r.estado]??BADGE.Pendiente).color, padding:'3px 10px', borderRadius:20, fontSize:11, fontWeight:700 }}>
-                    {r.estado}
-                  </span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>

@@ -25,7 +25,7 @@ public class Servicio {
     private Integer duracion;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('Disponible','No disponible') DEFAULT 'Disponible'")
+    @Column(columnDefinition = "ENUM('Disponible','No_disponible') DEFAULT 'Disponible'")
     private EstadoServicio estado;
 
     public enum EstadoServicio { Disponible, No_disponible }

@@ -2,6 +2,11 @@ import { useQuery } from '@tanstack/react-query'
 import api from '../../api/axios'
 import StatCard from '../../components/common/StatCard'
 import PageHeader from '../../components/common/PageHeader'
+import {
+  LuCalendar, LuClock, LuUsers, LuBriefcase,
+  LuShoppingCart, LuBox, LuClipboardList,
+  LuPrinter, LuDownload,
+} from 'react-icons/lu'
 
 const LABELS = {
   totalReservas:      'Total Reservas',
@@ -19,12 +24,12 @@ export default function ReportesPage() {
   })
 
   const metrics = [
-    { icon:'📅', label:'Total Reservas',       value:dash?.totalReservas,      bg:'#e8f5e9' },
-    { icon:'⏳', label:'Reservas Pendientes',   value:dash?.reservasPendientes, bg:'#fff8e1' },
-    { icon:'👨‍👧', label:'Total Clientes',         value:dash?.totalClientes,      bg:'#e3f2fd' },
-    { icon:'💼', label:'Total Empleados',       value:dash?.totalEmpleados,     bg:'#f3e5f5' },
-    { icon:'🛒', label:'Total Ventas',          value:dash?.totalVentas,        bg:'#fff3e0' },
-    { icon:'📦', label:'Total Productos',       value:dash?.totalProductos,     bg:'#e0f7fa' },
+    { icon:<LuCalendar size={22} />,     label:'Total Reservas',       value:dash?.totalReservas,      bg:'#e8f5e9' },
+    { icon:<LuClock size={22} />,        label:'Reservas Pendientes',   value:dash?.reservasPendientes, bg:'#fff8e1' },
+    { icon:<LuUsers size={22} />,        label:'Total Clientes',         value:dash?.totalClientes,      bg:'#e3f2fd' },
+    { icon:<LuBriefcase size={22} />,    label:'Total Empleados',       value:dash?.totalEmpleados,     bg:'#f3e5f5' },
+    { icon:<LuShoppingCart size={22} />, label:'Total Ventas',          value:dash?.totalVentas,        bg:'#fff3e0' },
+    { icon:<LuBox size={22} />,          label:'Total Productos',       value:dash?.totalProductos,     bg:'#e0f7fa' },
   ]
 
   const handleDownloadCSV = () => {
@@ -49,8 +54,12 @@ export default function ReportesPage() {
   return (
     <div>
       <PageHeader title="Reportes & Estadísticas" subtitle="Resumen general del sistema Safari Kids">
-        <button className="btn btn-secondary" onClick={() => window.print()}>🖨️ Imprimir</button>
-        <button className="btn btn-primary" onClick={handleDownloadCSV} disabled={!dash}>⬇️ Descargar CSV</button>
+        <button className="btn btn-secondary" onClick={() => window.print()} style={{display:'flex',alignItems:'center',gap:6}}>
+          <LuPrinter size={15} /> Imprimir
+        </button>
+        <button className="btn btn-primary" onClick={handleDownloadCSV} disabled={!dash} style={{display:'flex',alignItems:'center',gap:6}}>
+          <LuDownload size={15} /> Descargar CSV
+        </button>
       </PageHeader>
 
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:16,marginBottom:28}}>
@@ -60,7 +69,9 @@ export default function ReportesPage() {
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
         {/* Resumen numérico */}
         <div className="card-admin">
-          <h3 style={{fontWeight:700,color:'#1a2e1a',marginBottom:14,fontSize:15}}>📋 Resumen del Sistema</h3>
+          <h3 style={{fontWeight:700,color:'#1a2e1a',marginBottom:14,fontSize:15,display:'flex',alignItems:'center',gap:8}}>
+            <LuClipboardList size={16} /> Resumen del Sistema
+          </h3>
           {Object.entries(dash ?? {}).map(([k, v]) => (
             <div key={k} style={{display:'flex',justifyContent:'space-between',padding:'9px 0',borderBottom:'1px solid #f5f5f5'}}>
               <span style={{fontSize:13,color:'#666'}}>{LABELS[k] ?? k}</span>
@@ -73,11 +84,17 @@ export default function ReportesPage() {
             <button onClick={handleDownloadCSV} disabled={!dash} style={{
               flex:1,background:dash?'#2E7D32':'#aaa',color:'#fff',border:'none',borderRadius:10,
               padding:'11px',fontSize:13,fontWeight:700,cursor:dash?'pointer':'default',fontFamily:'inherit',
-            }}>⬇️ CSV</button>
+              display:'flex',alignItems:'center',justifyContent:'center',gap:6,
+            }}>
+              <LuDownload size={14} /> CSV
+            </button>
             <button onClick={() => window.print()} style={{
               flex:1,background:'#f5f5f5',color:'#555',border:'none',borderRadius:10,
               padding:'11px',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',
-            }}>🖨️ Imprimir</button>
+              display:'flex',alignItems:'center',justifyContent:'center',gap:6,
+            }}>
+              <LuPrinter size={14} /> Imprimir
+            </button>
           </div>
         </div>
 

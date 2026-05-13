@@ -6,6 +6,7 @@ import PageHeader from '../../components/common/PageHeader'
 import Modal from '../../components/common/Modal'
 import StatCard from '../../components/common/StatCard'
 import toast from 'react-hot-toast'
+import { LuShoppingCart, LuCircleCheck, LuDollarSign } from 'react-icons/lu'
 
 export default function VentasPage() {
   const qc = useQueryClient()
@@ -40,9 +41,9 @@ export default function VentasPage() {
       </PageHeader>
 
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:16,marginBottom:24}}>
-        <StatCard icon="🛒" label="Total Ventas" value={ventas.length} bg="#fff3e0" />
-        <StatCard icon="✅" label="Completadas" value={completadas.length} bg="#e8f5e9" />
-        <StatCard icon="💰" label="Ingresos Totales" value={`S/ ${totalMonto.toFixed(2)}`} bg="#e3f2fd" />
+        <StatCard icon={<LuShoppingCart size={22} />} label="Total Ventas"     value={ventas.length}               bg="#fff3e0" />
+        <StatCard icon={<LuCircleCheck size={22} />}  label="Completadas"      value={completadas.length}          bg="#e8f5e9" />
+        <StatCard icon={<LuDollarSign size={22} />}   label="Ingresos Totales" value={`S/ ${totalMonto.toFixed(2)}`} bg="#e3f2fd" />
       </div>
 
       <DataTable columns={cols} data={ventas} loading={isLoading} searchKeys={['estado']}

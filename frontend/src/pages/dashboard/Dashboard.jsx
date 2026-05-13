@@ -3,6 +3,10 @@ import { Link } from 'react-router-dom'
 import api from '../../api/axios'
 import StatCard from '../../components/common/StatCard'
 import { useAuth } from '../../context/AuthContext'
+import {
+  LuCalendar, LuClock, LuUsers, LuBriefcase,
+  LuShoppingCart, LuPackage, LuChartBar, LuShoppingBag,
+} from 'react-icons/lu'
 
 export default function Dashboard() {
   const { user } = useAuth()
@@ -13,70 +17,118 @@ export default function Dashboard() {
   })
 
   const cards = [
-    { icon:'📅', label:'Total Reservas',       value: stats?.totalReservas,       bg:'#e8f5e9', color:'#2E7D32', trend:'↑ Ver todas' },
-    { icon:'⏳', label:'Reservas Pendientes',   value: stats?.reservasPendientes,  bg:'#fff8e1', color:'#f57f17', trend:'Requieren atención' },
-    { icon:'👨‍👧', label:'Clientes Registrados',  value: stats?.totalClientes,        bg:'#e3f2fd', color:'#1565c0' },
-    { icon:'💼', label:'Empleados Activos',     value: stats?.totalEmpleados,       bg:'#f3e5f5', color:'#6a1b9a' },
-    { icon:'🛒', label:'Ventas Realizadas',     value: stats?.totalVentas,          bg:'#fff3e0', color:'#e65100' },
-    { icon:'📦', label:'Productos en Catálogo', value: stats?.totalProductos,       bg:'#e0f7fa', color:'#00695c' },
+    { icon: <LuCalendar size={26} color="#fff" />, label: 'Total Reservas',       value: stats?.totalReservas,      bg: '#1B7A3E', color: '#1B7A3E', trend: '↑ Ver todas' },
+    { icon: <LuClock     size={26} color="#fff" />, label: 'Reservas Pendientes',  value: stats?.reservasPendientes, bg: '#FFC42E', color: '#b38600', trend: 'Requieren atención' },
+    { icon: <LuUsers     size={26} color="#fff" />, label: 'Clientes Registrados', value: stats?.totalClientes,      bg: '#38BDF8', color: '#0280b0' },
+    { icon: <LuBriefcase size={26} color="#fff" />, label: 'Empleados Activos',    value: stats?.totalEmpleados,     bg: '#A855F7', color: '#7e22ce' },
+    { icon: <LuShoppingCart size={26} color="#fff" />, label: 'Ventas Realizadas',     value: stats?.totalVentas,    bg: '#FF6F3C', color: '#c94200' },
+    { icon: <LuPackage   size={26} color="#fff" />, label: 'Productos en Catálogo', value: stats?.totalProductos,   bg: '#FF4F95', color: '#c0005e' },
   ]
 
   const accesos = [
-    { to:'/reservas',   icon:'📅', label:'Ver Reservas',    color:'#2E7D32' },
-    { to:'/clientes',   icon:'👨‍👧', label:'Ver Clientes',    color:'#1565c0' },
-    { to:'/ventas',     icon:'🛒', label:'Nueva Venta',     color:'#e65100' },
-    { to:'/inventario', icon:'📦', label:'Inventario',      color:'#00695c' },
-    { to:'/reportes',   icon:'📊', label:'Ver Reportes',    color:'#6a1b9a' },
-    { to:'/compras',    icon:'🏪', label:'Ver Compras',     color:'#4E342E' },
+    { to: '/reservas',   icon: <LuCalendar    size={24} />, label: 'Ver Reservas', color: '#1B7A3E' },
+    { to: '/clientes',   icon: <LuUsers       size={24} />, label: 'Ver Clientes', color: '#38BDF8' },
+    { to: '/ventas',     icon: <LuShoppingCart size={24} />, label: 'Nueva Venta', color: '#FF6F3C' },
+    { to: '/inventario', icon: <LuPackage     size={24} />, label: 'Inventario',   color: '#FF4F95' },
+    { to: '/reportes',   icon: <LuChartBar    size={24} />, label: 'Ver Reportes', color: '#A855F7' },
+    { to: '/compras',    icon: <LuShoppingBag size={24} />, label: 'Ver Compras',  color: '#FFC42E' },
   ]
 
   return (
     <div>
-      {/* Welcome */}
-      <div style={{ background:'linear-gradient(135deg,#1b5e20,#2E7D32)', borderRadius:20, padding:'28px 32px', marginBottom:24, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:16 }}>
+      {/* Welcome banner */}
+      <div style={{
+        background: 'linear-gradient(135deg,#1b5e20,#1B7A3E)',
+        border: '4px solid #0F5527',
+        borderRadius: 24,
+        boxShadow: '8px 8px 0 #0F5527',
+        padding: '28px 32px',
+        marginBottom: 28,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 16,
+      }}>
         <div>
-          <h2 style={{ color:'#F9A825', fontSize:13, fontWeight:700, letterSpacing:2, textTransform:'uppercase', marginBottom:4 }}>Panel Administrativo</h2>
-          <h1 style={{ color:'#fff', fontSize:24, fontWeight:800, margin:0 }}>¡Hola, {user?.nombreCompleto?.split(' ')[0]}! 🦁</h1>
-          <p style={{ color:'rgba(255,255,255,.7)', fontSize:13, marginTop:4 }}>Safari Kids – Sistema de Gestión</p>
+          <h2 style={{ color: '#FFC42E', fontSize: 12, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6, margin: '0 0 6px' }}>
+            Panel Administrativo
+          </h2>
+          <h1 style={{ fontFamily: "'Fredoka One',cursive", color: '#fff', fontSize: 28, margin: '0 0 4px', lineHeight: 1.2 }}>
+            ¡Hola, {user?.nombreCompleto?.split(' ')[0]}! 🦁
+          </h1>
+          <p style={{ color: 'rgba(255,255,255,.7)', fontSize: 13, margin: 0 }}>
+            Safari Kids – Sistema de Gestión
+          </p>
         </div>
-        <div style={{ textAlign:'right' }}>
-          <p style={{ color:'rgba(255,255,255,.6)', fontSize:12 }}>{new Date().toLocaleDateString('es-PE',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</p>
+        <div style={{ textAlign: 'right' }}>
+          <p style={{ color: 'rgba(255,255,255,.65)', fontSize: 12, margin: 0 }}>
+            {new Date().toLocaleDateString('es-PE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
         </div>
       </div>
 
-      {/* Stats */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))', gap:16, marginBottom:24 }}>
+      {/* Stats grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 16, marginBottom: 24 }}>
         {cards.map(c => <StatCard key={c.label} {...c} />)}
       </div>
 
-      {/* Quick access */}
-      <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:20, flexWrap:'wrap' }}>
+      {/* Quick access + System status */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20, flexWrap: 'wrap' }}>
+
+        {/* Quick access */}
         <div className="card-admin">
-          <h3 style={{ fontWeight:700, color:'#1a2e1a', marginBottom:16, fontSize:15 }}>Accesos Rápidos</h3>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+          <h3 style={{ fontFamily: "'Fredoka One',cursive", fontWeight: 400, color: 'var(--ink)', marginBottom: 16, fontSize: 18 }}>
+            Accesos Rápidos
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {accesos.map(a => (
-              <Link key={a.to} to={a.to} style={{ textDecoration:'none' }}>
-                <div style={{ background:a.color+'11', border:`1.5px solid ${a.color}33`, borderRadius:12, padding:'14px 16px', display:'flex', alignItems:'center', gap:10, transition:'all .15s', cursor:'pointer' }}
-                  onMouseOver={e=>{e.currentTarget.style.background=a.color+'22'; e.currentTarget.style.transform='translateY(-2px)'}}
-                  onMouseOut={e=>{e.currentTarget.style.background=a.color+'11'; e.currentTarget.style.transform='translateY(0)'}}>
-                  <span style={{ fontSize:22 }}>{a.icon}</span>
-                  <span style={{ color:a.color, fontWeight:700, fontSize:13 }}>{a.label}</span>
+              <Link key={a.to} to={a.to} style={{ textDecoration: 'none' }}>
+                <div
+                  className="card-chunky"
+                  style={{
+                    padding: '14px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    transition: 'all .15s',
+                    cursor: 'pointer',
+                    color: a.color,
+                  }}
+                  onMouseOver={e => {
+                    e.currentTarget.style.transform = 'translate(-2px,-2px)'
+                    e.currentTarget.style.boxShadow = '10px 10px 0 var(--ink)'
+                  }}
+                  onMouseOut={e => {
+                    e.currentTarget.style.transform = 'translate(0,0)'
+                    e.currentTarget.style.boxShadow = '8px 8px 0 var(--ink)'
+                  }}
+                >
+                  <span style={{ color: a.color, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                    {a.icon}
+                  </span>
+                  <span style={{ fontFamily: "'Fredoka One',cursive", color: 'var(--ink)', fontSize: 15, lineHeight: 1.2 }}>
+                    {a.label}
+                  </span>
                 </div>
               </Link>
             ))}
           </div>
         </div>
 
+        {/* System status */}
         <div className="card-admin">
-          <h3 style={{ fontWeight:700, color:'#1a2e1a', marginBottom:16, fontSize:15 }}>Estado del Sistema</h3>
+          <h3 style={{ fontFamily: "'Fredoka One',cursive", fontWeight: 400, color: 'var(--ink)', marginBottom: 16, fontSize: 18 }}>
+            Estado del Sistema
+          </h3>
           {[
-            ['Base de datos','Conectada','ok'],
-            ['API REST','Activa','ok'],
-            ['Autenticación JWT','Activa','ok'],
-            ['Seed de datos','Cargado','ok'],
-          ].map(([label,val,st]) => (
-            <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 0', borderBottom:'1px solid #f5f5f5' }}>
-              <span style={{ fontSize:12, color:'#666' }}>{label}</span>
+            ['Base de datos', 'Conectada', 'ok'],
+            ['API REST',      'Activa',    'ok'],
+            ['Autenticación JWT', 'Activa','ok'],
+            ['Seed de datos', 'Cargado',   'ok'],
+          ].map(([label, val, st]) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f0ebe0' }}>
+              <span style={{ fontSize: 12, color: '#666' }}>{label}</span>
               <span className={`badge badge-${st === 'ok' ? 'ok' : 'warn'}`}>{val}</span>
             </div>
           ))}

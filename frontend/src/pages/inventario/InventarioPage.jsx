@@ -7,6 +7,7 @@ import PageHeader from '../../components/common/PageHeader'
 import Modal from '../../components/common/Modal'
 import StatCard from '../../components/common/StatCard'
 import toast from 'react-hot-toast'
+import { LuBox, LuCircleCheck, LuTriangleAlert } from 'react-icons/lu'
 
 export default function InventarioPage() {
   const qc = useQueryClient()
@@ -31,22 +32,24 @@ export default function InventarioPage() {
     { key:'stockMinimo', label:'Stock Mínimo' },
     { key:'ubicacion',   label:'Ubicación' },
     { key:'stockActual', label:'Alerta', render:(v,row) => v<=(row.stockMinimo??5)
-      ? <span className="badge badge-err">⚠️ Stock bajo</span>
-      : <span className="badge badge-ok">✓ Normal</span>
+      ? <span className="badge badge-err" style={{display:'inline-flex',alignItems:'center',gap:4}}><LuTriangleAlert size={12} /> Stock bajo</span>
+      : <span className="badge badge-ok" style={{display:'inline-flex',alignItems:'center',gap:4}}><LuCircleCheck size={12} /> Normal</span>
     },
   ]
 
   return (
     <div>
       <PageHeader title="Inventario & Productos" subtitle="Control de stock en tiempo real">
-        <button className="btn btn-secondary" onClick={()=>setModalProd(true)}>📦 Productos</button>
+        <button className="btn btn-secondary" onClick={()=>setModalProd(true)} style={{display:'flex',alignItems:'center',gap:6}}>
+          <LuBox size={15} /> Productos
+        </button>
         <button className="btn btn-primary" onClick={()=>{setEditing(null);setModal(true)}}>+ Ajustar Stock</button>
       </PageHeader>
 
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:16,marginBottom:24}}>
-        <StatCard icon="📦" label="Total Productos" value={invData.length} bg="#e0f7fa" />
-        <StatCard icon="✅" label="Stock Normal"    value={ok.length}   bg="#e8f5e9" />
-        <StatCard icon="⚠️" label="Stock Bajo"      value={bajo.length} bg="#fff8e1" trend={bajo.length > 0 ? 'Requiere reposición':'Todo en orden'} />
+        <StatCard icon={<LuBox size={22} />}          label="Total Productos" value={invData.length} bg="#e0f7fa" />
+        <StatCard icon={<LuCircleCheck size={22} />}  label="Stock Normal"    value={ok.length}   bg="#e8f5e9" />
+        <StatCard icon={<LuTriangleAlert size={22} />} label="Stock Bajo"      value={bajo.length} bg="#fff8e1" trend={bajo.length > 0 ? 'Requiere reposición':'Todo en orden'} />
       </div>
 
       <DataTable columns={cols} data={invData} loading={isLoading}

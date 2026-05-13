@@ -1,5 +1,6 @@
 package com.safarikids.security;
 
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import lombok.RequiredArgsConstructor;
@@ -24,15 +25,17 @@ public class JwtFilter extends OncePerRequestFilter {
         String header = req.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
-            String username = jwtUtil.extractUsername(token);
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails ud = userDetailsService.loadUserByUsername(username);
-                if (jwtUtil.validateToken(token, ud)) {
-                    var auth = new UsernamePasswordAuthenticationToken(ud, null, ud.getAuthorities());
-                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
-                    SecurityContextHolder.getContext().setAuthentication(auth);
+            try {
+                String username = jwtUtil.extractUsername(token);
+                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    UserDetails ud = userDetailsService.loadUserByUsername(username);
+                    if (jwtUtil.validateToken(token, ud)) {
+                        var auth = new UsernamePasswordAuthenticationToken(ud, null, ud.getAuthorities());
+                        auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
+                        SecurityContextHolder.getContext().setAuthentication(auth);
+                    }
                 }
-            }
+            } catch (JwtException | IllegalArgumentException ignored) {}
         }
         chain.doFilter(req, res);
     }

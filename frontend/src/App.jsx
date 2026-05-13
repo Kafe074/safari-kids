@@ -14,6 +14,7 @@ import Register        from './pages/auth/Register'
 
 import MiCuenta        from './pages/cliente/MiCuenta'
 import MisReservas     from './pages/cliente/MisReservas'
+import MisCompras      from './pages/cliente/MisCompras'
 import NuevaReserva    from './pages/cliente/NuevaReserva'
 
 import Dashboard       from './pages/dashboard/Dashboard'
@@ -54,6 +55,7 @@ export default function App() {
               <Route path="/reservar"           element={<NuevaReserva />} />
               <Route path="/mi-cuenta"          element={<MiCuenta />} />
               <Route path="/mi-cuenta/reservas" element={<MisReservas />} />
+              <Route path="/mi-cuenta/compras"  element={<MisCompras />} />
               <Route path="/carrito"            element={<CarritoPage />} />
             </Route>
           </Route>
