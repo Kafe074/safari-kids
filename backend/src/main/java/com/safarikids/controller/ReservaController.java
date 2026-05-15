@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -30,6 +29,8 @@ public class ReservaController {
     private final ServicioRepository servicioRepo;
     private final DetalleReservaRepository detalleRepo;
     private final UsuarioRepository usuarioRepo;
+    private final ServicioInsumoRepository servicioInsumoRepo;
+    private final InsumoRepository insumoRepo;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Reserva>>> getAll() {
@@ -181,6 +182,18 @@ public class ReservaController {
         return repository.findById(id).map(r -> {
             r.setEstado(Reserva.EstadoReserva.Confirmado);
             repository.save(r);
+
+            // Descontar insumos de cada servicio en la reserva
+            detalleRepo.findByReservaIdReserva(id).forEach(detalle -> {
+                servicioInsumoRepo.findByServicioIdServicio(detalle.getServicio().getIdServicio())
+                    .forEach(si -> {
+                        Insumo insumo = si.getInsumo();
+                        int descuento = si.getCantidad().intValue();
+                        insumo.setStock(Math.max(0, insumo.getStock() - descuento));
+                        insumoRepo.save(insumo);
+                    });
+            });
+
             return ResponseEntity.ok(ApiResponse.ok("Reserva confirmada", (Void) null));
         }).orElse(ResponseEntity.notFound().build());
     }

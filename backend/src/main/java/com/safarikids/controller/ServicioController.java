@@ -1,11 +1,14 @@
 package com.safarikids.controller;
 
 import com.safarikids.dto.ApiResponse;
-import com.safarikids.model.Servicio;
-import com.safarikids.repository.ServicioRepository;
+import com.safarikids.model.*;
+import com.safarikids.repository.*;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -14,6 +17,8 @@ import java.util.List;
 public class ServicioController {
 
     private final ServicioRepository repository;
+    private final ServicioInsumoRepository servicioInsumoRepo;
+    private final InsumoRepository insumoRepo;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Servicio>>> getAll() {
@@ -43,5 +48,72 @@ public class ServicioController {
         if (!repository.existsById(id)) return ResponseEntity.notFound().build();
         repository.deleteById(id);
         return ResponseEntity.ok(ApiResponse.ok("Eliminado", null));
+    }
+
+    /* ── Insumos por servicio ─────────────────────────────────── */
+
+    @GetMapping("/{id}/insumos")
+    public ResponseEntity<ApiResponse<List<ServicioInsumo>>> getInsumos(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.ok(servicioInsumoRepo.findByServicioIdServicio(id)));
+    }
+
+    @Transactional
+    @PostMapping("/{id}/insumos")
+    public ResponseEntity<ApiResponse<ServicioInsumo>> addInsumo(
+            @PathVariable Integer id,
+            @RequestBody InsumoRequest req) {
+
+        Servicio servicio = repository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Servicio no encontrado"));
+        Insumo insumo = insumoRepo.findById(req.getIdInsumo())
+            .orElseThrow(() -> new RuntimeException("Insumo no encontrado"));
+
+        if (servicioInsumoRepo.existsByServicioIdServicioAndInsumoIdInsumo(id, req.getIdInsumo())) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("El insumo ya está asignado a este servicio"));
+        }
+
+        ServicioInsumo si = ServicioInsumo.builder()
+            .servicio(servicio)
+            .insumo(insumo)
+            .cantidad(req.getCantidad())
+            .build();
+        return ResponseEntity.ok(ApiResponse.ok("Insumo asignado", servicioInsumoRepo.save(si)));
+    }
+
+    @Transactional
+    @PutMapping("/{id}/insumos/{idInsumo}")
+    public ResponseEntity<ApiResponse<ServicioInsumo>> updateInsumo(
+            @PathVariable Integer id,
+            @PathVariable Integer idInsumo,
+            @RequestBody InsumoRequest req) {
+
+        return servicioInsumoRepo.findByServicioIdServicio(id).stream()
+            .filter(si -> si.getInsumo().getIdInsumo().equals(idInsumo))
+            .findFirst()
+            .map(si -> {
+                si.setCantidad(req.getCantidad());
+                return ResponseEntity.ok(ApiResponse.ok("Actualizado", servicioInsumoRepo.save(si)));
+            })
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    @Transactional
+    @DeleteMapping("/{id}/insumos/{idInsumo}")
+    public ResponseEntity<ApiResponse<Void>> removeInsumo(
+            @PathVariable Integer id,
+            @PathVariable Integer idInsumo) {
+
+        if (!servicioInsumoRepo.existsByServicioIdServicioAndInsumoIdInsumo(id, idInsumo)) {
+            return ResponseEntity.notFound().build();
+        }
+        servicioInsumoRepo.deleteByServicioIdServicioAndInsumoIdInsumo(id, idInsumo);
+        return ResponseEntity.ok(ApiResponse.ok("Insumo removido", null));
+    }
+
+    @Data
+    public static class InsumoRequest {
+        private Integer idInsumo;
+        private BigDecimal cantidad;
     }
 }

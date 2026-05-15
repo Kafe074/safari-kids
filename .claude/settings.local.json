@@ -52,7 +52,19 @@
       "Bash(node --input-type=module)",
       "Bash(git commit *)",
       "Bash(git push *)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(./mvnw compile *)",
+      "Bash(mvn compile *)",
+      "Bash(wkhtmltopdf --version)",
+      "Bash(python3 -c \"import weasyprint; print\\('weasyprint ok'\\)\")",
+      "Bash(python3 -c \"import reportlab; print\\('reportlab ok'\\)\")",
+      "Bash(python3 -c \"import reportlab\")",
+      "Bash(pip3 install *)",
+      "Bash(python3 -m pip install reportlab --quiet)",
+      "Bash(npm list *)",
+      "Bash(google-chrome --version)",
+      "Bash(google-chrome --headless --disable-gpu --print-to-pdf=/tmp/test.pdf --no-sandbox about:blank)",
+      "Bash(google-chrome *)"
     ],
     "additionalDirectories": [
       "/tmp",
