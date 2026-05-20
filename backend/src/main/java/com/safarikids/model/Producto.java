@@ -25,8 +25,8 @@ public class Producto {
     private BigDecimal costo;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('Activo','Inactivo') DEFAULT 'Activo'")
-    private EstadoProducto estado;
+    @Column(length = 20)
+    private EstadoProducto estado = EstadoProducto.Activo;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_categoria")

@@ -26,8 +26,8 @@ public class Pago {
     private LocalDate fechaPago;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('Pendiente','Pagado') DEFAULT 'Pendiente'")
-    private EstadoPago estado;
+    @Column(length = 20)
+    private EstadoPago estado = EstadoPago.Pendiente;
 
     @Column(length = 100)
     private String referencia;

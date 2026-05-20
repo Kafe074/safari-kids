@@ -27,8 +27,8 @@ public class Promocion {
     private LocalDate fechaFin;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('Activa','Inactiva') DEFAULT 'Activa'")
-    private EstadoPromocion estado;
+    @Column(length = 20)
+    private EstadoPromocion estado = EstadoPromocion.Activa;
 
     @ManyToMany
     @JoinTable(name = "Promocion_Servicio",

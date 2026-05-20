@@ -3,6 +3,7 @@ package com.safarikids.model;
 import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
@@ -22,7 +23,7 @@ public class MovimientoInventario {
     @Column(nullable = false)
     private Integer cantidad;
 
-    @Column(columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP")
+    @CreationTimestamp
     private LocalDateTime fechaMovimiento;
 
     @Column(length = 150)

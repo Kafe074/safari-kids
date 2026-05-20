@@ -19,8 +19,8 @@ public class Horario {
     private LocalTime horaFin;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('Disponible','No_disponible') DEFAULT 'Disponible'")
-    private EstadoHorario estado;
+    @Column(length = 20)
+    private EstadoHorario estado = EstadoHorario.Disponible;
 
     public enum EstadoHorario { Disponible, No_disponible }
 }

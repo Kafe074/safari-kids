@@ -18,8 +18,8 @@ public class Asiento {
     private String tipo;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('Disponible','Ocupado') DEFAULT 'Disponible'")
-    private EstadoAsiento estado;
+    @Column(length = 20)
+    private EstadoAsiento estado = EstadoAsiento.Disponible;
 
     @Column(length = 150)
     private String descripcion;
