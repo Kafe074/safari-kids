@@ -64,7 +64,8 @@
       "Bash(npm list *)",
       "Bash(google-chrome --version)",
       "Bash(google-chrome --headless --disable-gpu --print-to-pdf=/tmp/test.pdf --no-sandbox about:blank)",
-      "Bash(google-chrome *)"
+      "Bash(google-chrome *)",
+      "Bash(mvn test *)"
     ],
     "additionalDirectories": [
       "/tmp",

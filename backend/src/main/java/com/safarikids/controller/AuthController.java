@@ -50,7 +50,7 @@ public class AuthController {
         if (usuarioRepo.existsByCorreo(req.getCorreo()))
             return ResponseEntity.badRequest().body(ApiResponse.error("El correo ya está registrado"));
 
-        java.util.Optional<Rol> rolOpt = rolRepo.findByNombre("CLIENTE");
+        java.util.Optional<Rol> rolOpt = rolRepo.findByNombre("Cliente");
         if (rolOpt.isEmpty())
             return ResponseEntity.status(500).body(ApiResponse.error("Rol CLIENTE no encontrado"));
         Rol rolCliente = rolOpt.get();
