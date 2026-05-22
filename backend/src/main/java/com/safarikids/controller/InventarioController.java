@@ -18,12 +18,18 @@ import java.util.List;
 public class InventarioController {
 
     private final InventarioRepository repository;
-    private final ProductoRepository productoRepo;
+    private final ProductoRepository   productoRepo;
 
     @Transactional(readOnly = true)
     @GetMapping
     public ResponseEntity<ApiResponse<List<Inventario>>> getAll() {
         return ResponseEntity.ok(ApiResponse.ok(repository.findAll()));
+    }
+
+    @Transactional(readOnly = true)
+    @GetMapping("/sucursal/{sucursal}")
+    public ResponseEntity<ApiResponse<List<Inventario>>> getBySucursal(@PathVariable String sucursal) {
+        return ResponseEntity.ok(ApiResponse.ok(repository.findBySucursal(sucursal)));
     }
 
     @GetMapping("/{id}")
@@ -33,7 +39,6 @@ public class InventarioController {
             .orElse(ResponseEntity.notFound().build());
     }
 
-    /** Create inventory entry for a product. Body: { idProducto, stockActual, stockMinimo, ubicacion } */
     @PostMapping
     public ResponseEntity<ApiResponse<Integer>> create(@RequestBody InventarioRequest req) {
         Producto prod = productoRepo.getReferenceById(req.getIdProducto());
@@ -41,12 +46,23 @@ public class InventarioController {
             .producto(prod)
             .stockActual(req.getStockActual() != null ? req.getStockActual() : 0)
             .stockMinimo(req.getStockMinimo() != null ? req.getStockMinimo() : 5)
-            .ubicacion(req.getUbicacion() != null ? req.getUbicacion() : "Estante A")
+            .ubicacion(req.getUbicacion() != null ? req.getUbicacion() : "")
+            .sucursal(req.getSucursal())
             .build();
         return ResponseEntity.ok(ApiResponse.ok("Creado", repository.save(inv).getIdInventario()));
     }
 
-    /** Update stock quantity only */
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<Inventario>> update(@PathVariable Integer id, @RequestBody InventarioRequest req) {
+        return repository.findById(id).map(inv -> {
+            if (req.getStockActual() != null) inv.setStockActual(req.getStockActual());
+            if (req.getStockMinimo() != null) inv.setStockMinimo(req.getStockMinimo());
+            if (req.getUbicacion()  != null) inv.setUbicacion(req.getUbicacion());
+            if (req.getSucursal()   != null) inv.setSucursal(req.getSucursal());
+            return ResponseEntity.ok(ApiResponse.ok("Actualizado", repository.save(inv)));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
     @PatchMapping("/{id}/stock")
     public ResponseEntity<ApiResponse<Integer>> patchStock(@PathVariable Integer id, @RequestBody StockPatch body) {
         return repository.findById(id).map(inv -> {
@@ -67,6 +83,7 @@ public class InventarioController {
         private Integer stockActual;
         private Integer stockMinimo;
         private String  ubicacion;
+        private String  sucursal;
     }
 
     @Data public static class StockPatch {

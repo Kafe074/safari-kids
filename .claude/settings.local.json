@@ -95,7 +95,9 @@
       "Bash(echo \"New backend PID: $!\")",
       "Bash(grep -v \"^$\")",
       "Bash(apt-cache show *)",
-      "Bash(apt-get install *)"
+      "Bash(apt-get install *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Update:', d.get\\('message'\\)\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('OK Lucía:', d.get\\('data',{}\\).get\\('sucursal'\\)\\)\")"
     ],
     "additionalDirectories": [
       "/tmp",

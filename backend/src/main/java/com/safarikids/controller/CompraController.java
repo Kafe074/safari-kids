@@ -51,6 +51,7 @@ public class CompraController {
             .proveedor(prov)
             .total(total)
             .fechaCompra(LocalDateTime.now())
+            .sucursal(req.getSucursal())
             .build();
         repository.save(compra);
 
@@ -64,7 +65,12 @@ public class CompraController {
                     .costoUnitario(item.getCostoUnitario())
                     .subtotal(item.getCostoUnitario().multiply(BigDecimal.valueOf(item.getCantidad())))
                     .build());
-                inventarioRepo.findByProductoIdProducto(item.getIdProducto()).ifPresent(inv -> {
+                String suc = req.getSucursal();
+                java.util.Optional<com.safarikids.model.Inventario> invOpt =
+                    (suc != null && !suc.isBlank())
+                        ? inventarioRepo.findByProductoIdProductoAndSucursal(item.getIdProducto(), suc)
+                        : inventarioRepo.findByProductoIdProducto(item.getIdProducto());
+                invOpt.ifPresent(inv -> {
                     inv.setStockActual(inv.getStockActual() + item.getCantidad());
                     inventarioRepo.save(inv);
                 });
@@ -85,6 +91,7 @@ public class CompraController {
     @Data
     public static class CompraRequest {
         private Integer    idProveedor;
+        private String     sucursal;
         private List<Item> items;
 
         @Data

@@ -11,7 +11,7 @@ public class Inventario {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer idInventario;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_producto", nullable = false)
     private Producto producto;
 
@@ -22,4 +22,7 @@ public class Inventario {
 
     @Column(length = 100)
     private String ubicacion;
+
+    @Column(length = 100)
+    private String sucursal;
 }

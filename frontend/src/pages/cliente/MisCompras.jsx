@@ -1,17 +1,26 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ventasApi } from '../../api/ventas'
 import { Link, useNavigate } from 'react-router-dom'
 import { useState, useRef } from 'react'
+import toast from 'react-hot-toast'
 import {
   LuCalendar, LuPackage, LuShoppingCart, LuArrowRight,
   LuChevronDown, LuCircleCheck, LuArrowLeft, LuDownload, LuPrinter,
+  LuTruck, LuStore, LuMapPin,
 } from 'react-icons/lu'
 
 export default function MisCompras() {
+  const qc = useQueryClient()
   const navigate = useNavigate()
   const { data = [], isLoading } = useQuery({
     queryKey: ['mis-compras'],
     queryFn: () => ventasApi.misCompras().then(r => r.data.data ?? []),
+  })
+
+  const estadoMut = useMutation({
+    mutationFn: ({ id, estado }) => ventasApi.cambiarEstadoEntrega(id, estado),
+    onSuccess: () => { qc.invalidateQueries(['mis-compras']); toast.success('Estado actualizado') },
+    onError: () => toast.error('Error al actualizar'),
   })
 
   return (
@@ -141,7 +150,7 @@ export default function MisCompras() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {data.map(v => (
-              <VentaCard key={v.idVenta} venta={v} />
+              <VentaCard key={v.idVenta} venta={v} onCambiarEstado={(id, estado) => estadoMut.mutate({ id, estado })} />
             ))}
           </div>
         )}
@@ -150,10 +159,19 @@ export default function MisCompras() {
   )
 }
 
-function VentaCard({ venta }) {
+function VentaCard({ venta, onCambiarEstado }) {
   const [open, setOpen] = useState(false)
   const [descargando, setDescargando] = useState(false)
   const cardRef = useRef(null)
+
+  const esDelivery  = venta.metodoEntrega === 'Delivery'
+  const estadoEntrega = venta.estadoEntrega ?? 'Pendiente'
+  const estadoColor = estadoEntrega === 'Pendiente' ? '#f59e0b'
+    : estadoEntrega === 'EntregadoDelivery' ? '#3b82f6'
+    : '#2E7D32'
+  const estadoLabel = estadoEntrega === 'Pendiente' ? 'Pendiente de entrega'
+    : estadoEntrega === 'EntregadoDelivery' ? 'Entregado al delivery'
+    : 'Entregada — ¡gracias!'
 
   const handleDescargarPDF = async (e) => {
     e.stopPropagation()
@@ -243,41 +261,20 @@ function VentaCard({ venta }) {
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {/* date chip */}
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                background: '#FFF8E1',
-                border: '2px solid #1A2E1A',
-                borderRadius: 10,
-                padding: '3px 10px',
-                fontSize: 12,
-                fontWeight: 700,
-                color: '#1A2E1A',
-              }}
-            >
-              <LuCalendar size={12} color="#FFC42E" />
-              {fecha}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#FFF8E1', border: '2px solid #1A2E1A', borderRadius: 10, padding: '3px 10px', fontSize: 12, fontWeight: 700, color: '#1A2E1A' }}>
+              <LuCalendar size={12} color="#FFC42E" /> {fecha}
             </span>
-
-            {/* items count chip */}
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                background: '#ffe5d9',
-                border: '2px solid #1A2E1A',
-                borderRadius: 10,
-                padding: '3px 10px',
-                fontSize: 12,
-                fontWeight: 700,
-                color: '#1A2E1A',
-              }}
-            >
-              <LuPackage size={12} color="#FF6F3C" />
-              {itemCount} producto{itemCount !== 1 ? 's' : ''}
+            {/* items chip */}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#ffe5d9', border: '2px solid #1A2E1A', borderRadius: 10, padding: '3px 10px', fontSize: 12, fontWeight: 700, color: '#1A2E1A' }}>
+              <LuPackage size={12} color="#FF6F3C" /> {itemCount} producto{itemCount !== 1 ? 's' : ''}
+            </span>
+            {/* delivery chip */}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: esDelivery ? '#eff6ff' : '#e8f5e9', border: `2px solid ${esDelivery ? '#3b82f6' : '#2E7D32'}`, borderRadius: 10, padding: '3px 10px', fontSize: 12, fontWeight: 700, color: esDelivery ? '#3b82f6' : '#2E7D32' }}>
+              {esDelivery ? <LuTruck size={12} /> : <LuStore size={12} />} {esDelivery ? 'Delivery' : 'Recojo local'}
+            </span>
+            {/* estado entrega chip */}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: estadoColor + '18', borderRadius: 10, padding: '3px 10px', fontSize: 12, fontWeight: 700, color: estadoColor }}>
+              {estadoLabel}
             </span>
           </div>
         </div>
@@ -424,15 +421,55 @@ function VentaCard({ venta }) {
             <span style={{ fontFamily:"'Fredoka One',cursive", fontSize:28, color:'#1B7A3E' }}>S/ {Number(venta.total).toFixed(2)}</span>
           </div>
 
+          {/* dirección / sucursal info */}
+          {esDelivery && venta.direccionEntrega && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#eff6ff', borderRadius: 10, padding: '8px 14px', marginBottom: 12, fontSize: 13 }}>
+              <LuTruck size={14} color="#3b82f6" />
+              <span style={{ fontWeight: 700, color: '#1d4ed8' }}>Delivery a:</span>
+              <span style={{ color: '#333' }}>{venta.direccionEntrega}</span>
+            </div>
+          )}
+          {!esDelivery && venta.sucursalEntrega && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#e8f5e9', borderRadius: 10, padding: '8px 14px', marginBottom: 12, fontSize: 13 }}>
+              <LuMapPin size={14} color="#2E7D32" />
+              <span style={{ fontWeight: 700, color: '#2E7D32' }}>Recojo en:</span>
+              <span style={{ color: '#333' }}>{venta.sucursalEntrega}</span>
+            </div>
+          )}
+
+          {/* botón confirmar entrega */}
+          {estadoEntrega === 'Pendiente' && (
+            <button
+              onClick={() => onCambiarEstado(venta.idVenta, esDelivery ? 'EntregadoDelivery' : 'EntregadaCliente')}
+              style={{
+                marginBottom: 12, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                background: esDelivery ? '#eff6ff' : '#e8f5e9',
+                color: esDelivery ? '#1d4ed8' : '#2E7D32',
+                border: `3px solid ${esDelivery ? '#3b82f6' : '#2E7D32'}`,
+                borderRadius: 12, padding: '10px',
+                fontFamily: "'Fredoka One',cursive", fontSize: 15, cursor: 'pointer',
+                boxShadow: `3px 3px 0 ${esDelivery ? '#3b82f6' : '#2E7D32'}`,
+              }}>
+              {esDelivery ? <LuTruck size={16} /> : <LuCircleCheck size={16} />}
+              {esDelivery ? 'Confirmar: Entregado al delivery' : 'Confirmar: Recibido en local'}
+            </button>
+          )}
+          {estadoEntrega !== 'Pendiente' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#e8f5e9', borderRadius: 10, padding: '10px 14px', marginBottom: 12 }}>
+              <LuCircleCheck size={16} color="#2E7D32" />
+              <span style={{ fontFamily: "'Fredoka One',cursive", fontSize: 14, color: '#2E7D32' }}>{estadoLabel}</span>
+            </div>
+          )}
+
           {/* download button */}
           <button
             onClick={handleDescargarPDF}
             disabled={descargando}
             style={{
-              marginTop:16, width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-              background: descargando ? '#ccc' : '#1B7A3E', color:'#fff',
-              border:'3px solid #1A2E1A', borderRadius:12, padding:'10px',
-              fontFamily:"'Fredoka One',cursive", fontSize:15, cursor: descargando ? 'not-allowed' : 'pointer',
+              marginTop: 4, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              background: descargando ? '#ccc' : '#1B7A3E', color: '#fff',
+              border: '3px solid #1A2E1A', borderRadius: 12, padding: '10px',
+              fontFamily: "'Fredoka One',cursive", fontSize: 15, cursor: descargando ? 'not-allowed' : 'pointer',
               boxShadow: descargando ? 'none' : '4px 4px 0 #1A2E1A',
             }}>
             <LuDownload size={16} /> {descargando ? 'Generando PDF...' : 'Descargar boleta PDF'}

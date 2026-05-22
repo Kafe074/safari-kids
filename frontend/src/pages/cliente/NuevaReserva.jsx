@@ -14,11 +14,7 @@ import {
   LuTriangleAlert, LuTag, LuCreditCard, LuBanknote, LuPrinter,
 } from 'react-icons/lu'
 
-const SUCURSALES = [
-  'Sede Principal – Jr. Ayacucho 456',
-  'El Tambo – Av. Ferrocarril 789',
-  'Chilca – Calle Real 234',
-]
+import { SUCURSALES } from '../../constants/sucursales'
 
 function StepIndicator({ step, total }) {
   return (

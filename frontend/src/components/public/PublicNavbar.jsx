@@ -98,19 +98,21 @@ export default function PublicNavbar() {
       transition: 'all .3s',
     }}>
       <div ref={navRef} style={{
-        maxWidth: 1200, margin: '0 auto', padding: '0 24px',
+        maxWidth: 1200, margin: '0 auto', padding: '0 16px',
         height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: 8,
       }}>
 
         {/* ── Logo ── */}
-        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          <span style={{ fontSize: 32, lineHeight: 1 }} className="anim-roar">🦁</span>
-          <span style={{ fontFamily: "'Fredoka One', cursive", fontSize: 22, color: isLight ? '#fff' : '#2E7D32' }}>Safari</span>
-          <span style={{ fontFamily: "'Fredoka One', cursive", fontSize: 22, color: '#F9A825', marginLeft: -6 }}>Kids</span>
+        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <span style={{ fontSize: 28, lineHeight: 1 }} className="anim-roar">🦁</span>
+          <span style={{ fontFamily: "'Fredoka One', cursive", fontSize: 20, color: isLight ? '#fff' : '#2E7D32' }}>Safari</span>
+          <span style={{ fontFamily: "'Fredoka One', cursive", fontSize: 20, color: '#F9A825', marginLeft: -4 }}>Kids</span>
         </Link>
 
         {/* ── Desktop nav ── */}
-        <nav style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <nav style={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, justifyContent: 'center' }}
+          className="nav-desktop">
           {NAV.filter(item => !(user && item.label === 'Clientes')).map((item) => {
             if (item.dropdown) {
               const isOpen = openMenu === item.label
@@ -186,12 +188,12 @@ export default function PublicNavbar() {
         </nav>
 
         {/* ── Auth area ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {!user ? (
             <>
-              <Link to="/login" style={{
+              <Link to="/login" className="nav-hide-sm" style={{
                 color: textColor, fontSize: 13, fontWeight: 700, textDecoration: 'none',
-                padding: '6px 12px', borderRadius: 8, transition: 'background .15s',
+                padding: '6px 12px', borderRadius: 8, transition: 'background .15s', whiteSpace: 'nowrap',
               }}
               onMouseOver={e => e.currentTarget.style.background = hoverBg}
               onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
@@ -199,16 +201,16 @@ export default function PublicNavbar() {
               </Link>
               <button onClick={() => navigate('/login', { state: { intent: 'reservar' } })}
                 className="btn-jungle btn-jungle-yellow"
-                style={{ fontSize: 13, padding: '10px 20px' }}>
+                style={{ fontSize: 13, padding: '9px 18px', whiteSpace: 'nowrap' }}>
                 🗓 Reservar
               </button>
             </>
           ) : user.rol?.toUpperCase() === 'CLIENTE' ? (
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <Link to="/reservar" className="btn-jungle btn-jungle-yellow" style={{ fontSize: 13, padding: '9px 18px', textDecoration: 'none' }}>+ Reservar</Link>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <Link to="/reservar" className="btn-jungle btn-jungle-yellow nav-hide-sm" style={{ fontSize: 13, padding: '9px 16px', textDecoration: 'none', whiteSpace: 'nowrap' }}>+ Reservar</Link>
               <Link to="/carrito" style={{
-                position: 'relative', color: textColor, fontWeight: 700, fontSize: 20,
-                textDecoration: 'none', padding: '6px 10px', borderRadius: 8, display: 'flex', alignItems: 'center',
+                position: 'relative', color: textColor, fontWeight: 700, fontSize: 22,
+                textDecoration: 'none', padding: '4px 8px', borderRadius: 8, display: 'flex', alignItems: 'center',
               }}>
                 🛒
                 {cartCount > 0 && (
@@ -219,36 +221,89 @@ export default function PublicNavbar() {
                   }}>{cartCount}</span>
                 )}
               </Link>
-              <Link to="/mi-cuenta" style={{ color: textColor, fontWeight: 700, fontSize: 13, textDecoration: 'none', padding: '6px 10px', borderRadius: 8 }}>Mi cuenta</Link>
-              <button onClick={logout} style={{ background: 'none', border: `1.5px solid ${isLight ? 'rgba(255,255,255,.4)' : '#ddd'}`, borderRadius: 8, padding: '6px 12px', fontSize: 12, cursor: 'pointer', color: textColor, fontFamily: 'inherit' }}>Salir</button>
+              <Link to="/mi-cuenta" className="nav-hide-sm" style={{ color: textColor, fontWeight: 700, fontSize: 13, textDecoration: 'none', padding: '6px 8px', borderRadius: 8, whiteSpace: 'nowrap' }}>Mi cuenta</Link>
+              <button onClick={logout} style={{ background: 'none', border: `1.5px solid ${isLight ? 'rgba(255,255,255,.4)' : '#ddd'}`, borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', color: textColor, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>Salir</button>
             </div>
           ) : (
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <Link to="/dashboard" className="btn-jungle btn-jungle-green" style={{ fontSize: 13, padding: '9px 18px', textDecoration: 'none' }}>⚙️ Panel Admin</Link>
-              <button onClick={logout} style={{ background: 'none', border: `1.5px solid ${isLight ? 'rgba(255,255,255,.4)' : '#ddd'}`, borderRadius: 8, padding: '6px 12px', fontSize: 12, cursor: 'pointer', color: textColor, fontFamily: 'inherit' }}>Salir</button>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <Link to="/dashboard" className="btn-jungle btn-jungle-green nav-hide-sm" style={{ fontSize: 13, padding: '9px 16px', textDecoration: 'none', whiteSpace: 'nowrap' }}>⚙️ Panel</Link>
+              <button onClick={logout} style={{ background: 'none', border: `1.5px solid ${isLight ? 'rgba(255,255,255,.4)' : '#ddd'}`, borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', color: textColor, fontFamily: 'inherit' }}>Salir</button>
             </div>
           )}
+
+          {/* ── Hamburger (móvil) ── */}
+          <button
+            onClick={() => setMobileOpen(o => !o)}
+            className="hamburger-btn"
+            aria-label="Menú"
+            style={{
+              background: 'none',
+              border: `2px solid ${isLight ? 'rgba(255,255,255,0.6)' : '#ddd'}`,
+              borderRadius: 10, padding: '7px 9px', cursor: 'pointer',
+              color: textColor, display: 'none', flexDirection: 'column',
+              gap: 5, alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            {mobileOpen ? (
+              <span style={{ fontSize: 18, lineHeight: 1, color: '#333' }}>✕</span>
+            ) : (
+              <>
+                <span style={{ display: 'block', width: 20, height: 2, background: isLight ? '#fff' : '#333', borderRadius: 2 }} />
+                <span style={{ display: 'block', width: 20, height: 2, background: isLight ? '#fff' : '#333', borderRadius: 2 }} />
+                <span style={{ display: 'block', width: 20, height: 2, background: isLight ? '#fff' : '#333', borderRadius: 2 }} />
+              </>
+            )}
+          </button>
         </div>
       </div>
 
-      {/* ── Mobile menu (simplified) ── */}
+      {/* ── Mobile menu ── */}
       {mobileOpen && (
-        <div style={{ background: '#fff', borderTop: '1px solid #f0f0f0', padding: '12px 24px 20px' }}>
+        <div style={{ background: '#fff', borderTop: '2px solid #f0f0f0', padding: '8px 16px 20px', boxShadow: '0 8px 24px rgba(0,0,0,.12)' }}>
+          {/* Nav items */}
           {NAV.filter(item => !(user && item.label === 'Clientes')).map(item => (
             <div key={item.label}>
               {item.dropdown ? item.dropdown.map(d => (
-                <button key={d.label} onClick={() => { setMobileOpen(false); if (d.hash) handleHash(d.hash); else if (d.state) navigate(d.to, { state: d.state }); else navigate(d.to); }}
-                  style={{ display: 'block', width: '100%', padding: '10px 0', border: 'none', background: 'none', textAlign: 'left', fontSize: 14, fontWeight: 600, color: '#333', cursor: 'pointer', fontFamily: 'inherit' }}>
+                <button key={d.label}
+                  onClick={() => { setMobileOpen(false); if (d.hash) handleHash(d.hash); else if (d.state) navigate(d.to, { state: d.state }); else navigate(d.to); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 8px', border: 'none', background: 'none', textAlign: 'left', fontSize: 14, fontWeight: 600, color: '#333', cursor: 'pointer', fontFamily: 'inherit', borderBottom: '1px solid #f5f5f5' }}>
                   {d.label}
                 </button>
               )) : (
                 <Link to={item.to ?? '/'} onClick={() => { setMobileOpen(false); if (item.hash) handleHash(item.hash) }}
-                  style={{ display: 'block', padding: '10px 0', fontSize: 14, fontWeight: 700, color: '#333', textDecoration: 'none', borderBottom: '1px solid #f5f5f5' }}>
+                  style={{ display: 'flex', alignItems: 'center', padding: '12px 8px', fontSize: 15, fontWeight: 700, color: '#1A2E1A', textDecoration: 'none', borderBottom: '1px solid #f5f5f5' }}>
                   {item.label}
                 </Link>
               )}
             </div>
           ))}
+          {/* Auth actions en móvil */}
+          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {!user ? (
+              <>
+                <button onClick={() => { setMobileOpen(false); navigate('/login', { state: { intent: 'reservar' } }) }}
+                  className="btn-jungle btn-jungle-yellow" style={{ width: '100%', justifyContent: 'center', fontSize: 15 }}>
+                  🗓 Reservar cita
+                </button>
+                <Link to="/login" onClick={() => setMobileOpen(false)}
+                  style={{ textAlign: 'center', color: '#2E7D32', fontWeight: 700, fontSize: 14, textDecoration: 'none', padding: '10px', borderRadius: 10, border: '2px solid #2E7D32' }}>
+                  Iniciar sesión
+                </Link>
+              </>
+            ) : user.rol?.toUpperCase() === 'CLIENTE' ? (
+              <>
+                <Link to="/reservar" onClick={() => setMobileOpen(false)} className="btn-jungle btn-jungle-yellow" style={{ textDecoration: 'none', justifyContent: 'center', fontSize: 15 }}>🗓 + Reservar</Link>
+                <Link to="/mi-cuenta" onClick={() => setMobileOpen(false)} style={{ textAlign: 'center', color: '#2E7D32', fontWeight: 700, fontSize: 14, textDecoration: 'none', padding: '10px', borderRadius: 10, border: '2px solid #2E7D32' }}>Mi cuenta</Link>
+                <button onClick={() => { setMobileOpen(false); logout() }} style={{ background: '#ffebee', color: '#c62828', border: '2px solid #c62828', borderRadius: 10, padding: '10px', fontFamily: 'inherit', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Cerrar sesión</button>
+              </>
+            ) : (
+              <>
+                <Link to="/dashboard" onClick={() => setMobileOpen(false)} className="btn-jungle btn-jungle-green" style={{ textDecoration: 'none', justifyContent: 'center', fontSize: 15 }}>⚙️ Panel Admin</Link>
+                <button onClick={() => { setMobileOpen(false); logout() }} style={{ background: '#ffebee', color: '#c62828', border: '2px solid #c62828', borderRadius: 10, padding: '10px', fontFamily: 'inherit', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Cerrar sesión</button>
+              </>
+            )}
+          </div>
         </div>
       )}
     </header>

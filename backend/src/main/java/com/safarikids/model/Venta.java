@@ -28,5 +28,24 @@ public class Venta {
     @Column(length = 20)
     private EstadoVenta estado = EstadoVenta.Completado;
 
-    public enum EstadoVenta { Completado, Anulado }
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private MetodoEntrega metodoEntrega = MetodoEntrega.RecojoEnLocal;
+
+    @Column(length = 200)
+    private String direccionEntrega;
+
+    @Column(length = 100)
+    private String sucursalEntrega;
+
+    @Column(precision = 6, scale = 2)
+    private BigDecimal costoDelivery = BigDecimal.ZERO;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 25)
+    private EstadoEntrega estadoEntrega = EstadoEntrega.Pendiente;
+
+    public enum EstadoVenta  { Completado, Anulado }
+    public enum MetodoEntrega { Delivery, RecojoEnLocal }
+    public enum EstadoEntrega { Pendiente, EntregadoDelivery, EntregadaCliente }
 }

@@ -336,7 +336,132 @@ body {
   .hero-grid { grid-template-columns: 1fr !important; }
   .two-col   { grid-template-columns: 1fr !important; }
 }
+
+/* ── Tablet (≤ 1024px) ── */
+@media (max-width: 1024px) {
+  .section-title { font-size: clamp(28px, 5vw, 52px); }
+  .card-chunky:hover { transform: none !important; box-shadow: 8px 8px 0 var(--ink) !important; }
+  .stat-card:hover   { transform: none !important; box-shadow: 6px 6px 0 var(--ink) !important; }
+  .sticker:hover     { transform: none !important; }
+}
+
+/* ── Mobile (≤ 768px) ── */
 @media (max-width: 768px) {
-  .btn, .btn-jungle { font-size: 15px; padding: 12px 24px; }
+  /* Botones */
+  .btn, .btn-jungle { font-size: 14px !important; padding: 11px 20px !important; gap: 6px !important; }
   .counter-num { font-size: 38px; }
+
+  /* Modales — full-screen bottom sheet */
+  .modal-overlay { padding: 0 !important; align-items: flex-end !important; }
+  .modal-box {
+    border-radius: 24px 24px 0 0 !important;
+    max-height: 92vh !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Inputs */
+  .inp { font-size: 16px !important; } /* prevent iOS zoom */
+
+  /* Tabla — scroll horizontal */
+  .tbl-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tbl { min-width: 520px; }
+  .tbl th, .tbl td { padding: 10px 12px !important; font-size: 12px !important; }
+
+  /* Cards admin — layout */
+  .card-admin { padding: 16px !important; }
+  .card-chunky { border-radius: 20px !important; box-shadow: 6px 6px 0 var(--ink) !important; }
+  .card-chunky:hover { transform: none !important; }
+
+  /* Stat cards — 2 columnas en móvil */
+  .stat-cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+  .stat-card { padding: 14px !important; gap: 10px !important; }
+  .stat-icon { width: 40px !important; height: 40px !important; }
+
+  /* Sección de página admin — menos padding */
+  .admin-page-content { padding: 16px 14px !important; }
+
+  /* Formularios — columnas en 1 */
+  .form-grid-2 { grid-template-columns: 1fr !important; }
+  .form-grid-3 { grid-template-columns: 1fr !important; }
+
+  /* Page headers */
+  .page-header-actions { flex-direction: column !important; align-items: flex-start !important; }
+
+  /* Sidebar — overlay en móvil (gestionado por JS) */
+  .sidebar-overlay {
+    position: fixed !important;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 200;
+  }
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 199;
+    backdrop-filter: blur(2px);
+  }
+
+  /* NuevaReserva / CarritoPage — mejor espacio */
+  .reserva-service-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+  .horario-grid          { grid-template-columns: repeat(3, 1fr) !important; }
+
+  /* Section tag */
+  .section-tag { font-size: 12px; padding: 4px 10px; }
+}
+
+/* ── Small phone (≤ 480px) ── */
+@media (max-width: 480px) {
+  .btn, .btn-jungle { font-size: 13px !important; padding: 10px 16px !important; }
+  .section-title { font-size: clamp(24px, 7vw, 36px); }
+  .stat-card { flex-direction: column; text-align: center; padding: 12px 8px !important; gap: 6px !important; }
+  .stat-icon { width: 36px !important; height: 36px !important; }
+  .reserva-service-grid { grid-template-columns: 1fr !important; }
+  .horario-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .modal-box { max-height: 95vh !important; }
+  .tbl th, .tbl td { padding: 8px 10px !important; font-size: 11px !important; }
+}
+
+/* ── Prevenir scroll horizontal global ── */
+html, body { max-width: 100%; overflow-x: hidden; }
+img { max-width: 100%; height: auto; }
+
+/* ── Admin pages — responsive padding automático ── */
+@media (max-width: 768px) {
+  /* Cualquier div con padding: 32px 28px (patrón admin) → reducir */
+  [style*="padding: '32px 28px'"],
+  [style*="padding:32px 28px"] { padding: 14px !important; }
+
+  /* Stat grids que usan repeat(auto-fit, minmax(180px,1fr)) → 2 cols en móvil */
+  [style*="minmax(180px"] { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+  [style*="minmax(160px"] { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+
+  /* Section title en admin */
+  .section-title { font-size: clamp(24px, 6vw, 38px) !important; margin: 10px 0 8px !important; }
+
+  /* NuevaReserva — grid servicios 2 cols */
+  [style*="grid-template-columns: '1fr 1fr'"] { gap: 10px !important; }
+
+  /* Ocultar texto largo en badges de topbar */
+  .topbar-role-full { display: none; }
+  .topbar-role-short { display: inline !important; }
+}
+
+/* ── Navbar responsive helpers ── */
+@media (max-width: 768px) {
+  .nav-desktop      { display: none !important; }
+  .hamburger-btn    { display: flex !important; }
+  .nav-hide-sm      { display: none !important; }
+}
+@media (min-width: 769px) {
+  .hamburger-btn    { display: none !important; }
+}
+
+/* ── Print (boletas) ── */
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff !important; }
 }

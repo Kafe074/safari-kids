@@ -90,8 +90,15 @@ public class ReservaController {
             .orElseGet(() -> horarioRepo.findAll().stream().findFirst()
                 .orElseThrow(() -> new RuntimeException("Sin horarios disponibles")));
 
-        // ── Asignación balanceada por carga del día ───────────────────────────
-        List<Empleado> activos = empleadoRepo.findByEstado(Empleado.EstadoEmpleado.Activo);
+        // ── Asignación balanceada por carga del día + filtro de sucursal ─────
+        String sucursalSolicitada = req.getLocal();
+        List<Empleado> activos;
+        if (sucursalSolicitada != null && !sucursalSolicitada.isBlank()) {
+            activos = empleadoRepo.findBySucursalAndEstado(sucursalSolicitada, Empleado.EstadoEmpleado.Activo);
+            if (activos.isEmpty()) activos = empleadoRepo.findByEstado(Empleado.EstadoEmpleado.Activo); // fallback
+        } else {
+            activos = empleadoRepo.findByEstado(Empleado.EstadoEmpleado.Activo);
+        }
         if (activos.isEmpty()) throw new RuntimeException("Sin empleados activos");
 
         // Contar reservas NO canceladas por empleado para esa fecha

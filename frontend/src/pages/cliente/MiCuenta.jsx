@@ -48,6 +48,7 @@ export default function MiCuenta() {
   const nombre = user?.nombreCompleto || 'Cliente'
   const firstName = nombre.split(' ')[0]
 
+
   return (
     <div
       style={{
@@ -126,6 +127,7 @@ export default function MiCuenta() {
             >
               ¿Qué quieres hacer hoy?
             </p>
+
           </div>
         </div>
 

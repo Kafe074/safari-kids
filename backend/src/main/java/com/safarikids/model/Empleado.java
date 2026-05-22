@@ -19,7 +19,7 @@ public class Empleado {
     private String especialidad;
 
     @Column(length = 100)
-    private String local;
+    private String sucursal;
 
     @Enumerated(EnumType.STRING)
     private Turno turno;

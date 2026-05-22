@@ -23,4 +23,7 @@ public class Compra {
 
     @Column(precision = 10, scale = 2)
     private BigDecimal total;
+
+    @Column(length = 100)
+    private String sucursal;
 }

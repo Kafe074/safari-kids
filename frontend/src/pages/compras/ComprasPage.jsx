@@ -8,7 +8,8 @@ import PageHeader from '../../components/common/PageHeader'
 import Modal from '../../components/common/Modal'
 import StatCard from '../../components/common/StatCard'
 import toast from 'react-hot-toast'
-import { LuStore, LuDollarSign, LuUsers, LuX, LuCircleCheck } from 'react-icons/lu'
+import { SUCURSALES } from '../../constants/sucursales'
+import { LuStore, LuDollarSign, LuUsers, LuX, LuCircleCheck, LuMapPin } from 'react-icons/lu'
 
 export default function ComprasPage() {
   const qc = useQueryClient()
@@ -31,6 +32,10 @@ export default function ComprasPage() {
     { key:'idCompra',    label:'#',         render:v=><span style={{fontWeight:700,color:'#4E342E'}}>#{v}</span> },
     { key:'fechaCompra', label:'Fecha',      render:v=>v ? new Date(v).toLocaleDateString('es-PE',{day:'2-digit',month:'short',year:'numeric'}) : '—' },
     { key:'proveedor',   label:'Proveedor',  render:v=><span style={{fontWeight:600}}>{v?.nombre ?? '—'}</span> },
+    { key:'sucursal',    label:'Sucursal',   render:v=>v
+        ? <span style={{display:'inline-flex',alignItems:'center',gap:4,background:'#e8f5e9',color:'#1b5e20',borderRadius:8,padding:'3px 10px',fontSize:12,fontWeight:700}}><LuMapPin size={11}/>{v.split('–')[0].trim()}</span>
+        : <span style={{color:'#bbb',fontSize:12}}>—</span>
+    },
     { key:'total',       label:'Total',      render:v=><span style={{fontWeight:800,color:'#2E7D32'}}>S/ {Number(v??0).toFixed(2)}</span> },
   ]
 
@@ -96,6 +101,7 @@ function CompraForm({ proveedores, onClose, onSaved }) {
   })
 
   const [idProveedor, setIdProveedor] = useState('')
+  const [sucursal, setSucursal]       = useState('')
   const [items, setItems]             = useState([{ idProducto:'', cantidad:1, costoUnitario:'' }])
   const [saving, setSaving]           = useState(false)
 
@@ -107,12 +113,14 @@ function CompraForm({ proveedores, onClose, onSaved }) {
 
   const handleSave = async () => {
     if (!idProveedor) { toast.error('Selecciona un proveedor'); return }
+    if (!sucursal)    { toast.error('Selecciona la sucursal de destino'); return }
     const validItems = items.filter(i => i.idProducto && i.cantidad > 0 && i.costoUnitario)
     if (validItems.length === 0) { toast.error('Agrega al menos un producto'); return }
     setSaving(true)
     try {
       await comprasApi.create({
         idProveedor: Number(idProveedor),
+        sucursal,
         items: validItems.map(i => ({ idProducto: Number(i.idProducto), cantidad: Number(i.cantidad), costoUnitario: Number(i.costoUnitario) })),
       })
       toast.success('Compra registrada — inventario actualizado')
@@ -130,6 +138,18 @@ function CompraForm({ proveedores, onClose, onSaved }) {
           <option value="">Seleccionar proveedor...</option>
           {proveedores.map(p=><option key={p.idProveedor} value={p.idProveedor}>{p.nombre}</option>)}
         </select>
+      </div>
+
+      {/* Sucursal de destino */}
+      <div>
+        <label className="inp-label">Sucursal de destino *</label>
+        <select className="inp" value={sucursal} onChange={e=>setSucursal(e.target.value)}>
+          <option value="">Seleccionar sucursal...</option>
+          {SUCURSALES.map(s=><option key={s} value={s}>{s}</option>)}
+        </select>
+        <p style={{fontFamily:"'Poppins',sans-serif",fontSize:11,color:'#888',marginTop:4}}>
+          El stock se actualizará en el inventario de esta sucursal.
+        </p>
       </div>
 
       {/* Items */}

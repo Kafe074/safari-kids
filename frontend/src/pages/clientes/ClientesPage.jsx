@@ -6,11 +6,17 @@ import {
   LuPlus, LuPencil, LuTrash2, LuSearch, LuUsers, LuCircleCheck, LuX,
 } from 'react-icons/lu'
 
+function getNombre(c) {
+  const u = c?.usuario
+  if (!u) return '—'
+  return `${u.nombres ?? ''} ${u.apellidos ?? ''}`.trim() || '—'
+}
+
 export default function ClientesPage() {
   const qc = useQueryClient()
-  const [modal, setModal] = useState(false)
+  const [modal, setModal]     = useState(false)
   const [editing, setEditing] = useState(null)
-  const [search, setSearch] = useState('')
+  const [search, setSearch]   = useState('')
 
   const { data, isLoading } = useQuery({
     queryKey: ['clientes'],
@@ -23,7 +29,7 @@ export default function ClientesPage() {
     onError: () => toast.error('Error al eliminar'),
   })
 
-  const openNew = () => { setEditing(null); setModal(true) }
+  const openNew  = () => { setEditing(null); setModal(true) }
   const openEdit = row => { setEditing(row); setModal(true) }
   const closeModal = () => setModal(false)
 
@@ -31,10 +37,13 @@ export default function ClientesPage() {
 
   const filtered = (data ?? []).filter(r => {
     const q = search.toLowerCase()
+    const nombre = getNombre(r).toLowerCase()
     return !q
+      || nombre.includes(q)
       || String(r.idCliente ?? '').includes(q)
       || String(r.telefono ?? '').toLowerCase().includes(q)
       || String(r.direccion ?? '').toLowerCase().includes(q)
+      || String(r?.usuario?.correo ?? '').toLowerCase().includes(q)
   })
 
   return (
@@ -52,11 +61,7 @@ export default function ClientesPage() {
           <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 14, color: '#666', fontWeight: 400 }}>
             {total} cliente{total !== 1 ? 's' : ''} registrado{total !== 1 ? 's' : ''}
           </p>
-          <button
-            className="btn btn-p"
-            style={{ padding: '10px 22px', fontSize: 15, gap: 8 }}
-            onClick={openNew}
-          >
+          <button className="btn btn-p" style={{ padding: '10px 22px', fontSize: 15, gap: 8 }} onClick={openNew}>
             <LuPlus size={18} /> Nuevo Cliente
           </button>
         </div>
@@ -76,16 +81,11 @@ export default function ClientesPage() {
       </div>
 
       {/* ── Search bar ── */}
-      <div className="card-chunky" style={{ padding: '18px 22px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 180 }}>
+      <div className="card-chunky" style={{ padding: '18px 22px', marginBottom: 24 }}>
+        <div style={{ position: 'relative' }}>
           <LuSearch size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#aaa' }} />
-          <input
-            className="inp"
-            placeholder="Buscar por teléfono, dirección..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{ paddingLeft: 36 }}
-          />
+          <input className="inp" placeholder="Buscar por nombre, correo, teléfono..."
+            value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 36 }} />
         </div>
       </div>
 
@@ -107,6 +107,8 @@ export default function ClientesPage() {
               <thead>
                 <tr>
                   <th>#</th>
+                  <th>Nombre completo</th>
+                  <th>Correo</th>
                   <th>Teléfono</th>
                   <th>Dirección</th>
                   <th>Fecha Nac.</th>
@@ -121,23 +123,24 @@ export default function ClientesPage() {
                         #{r.idCliente}
                       </span>
                     </td>
+                    <td style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, color: 'var(--ink)' }}>
+                      {getNombre(r)}
+                    </td>
+                    <td style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: '#666' }}>
+                      {r?.usuario?.correo ?? '—'}
+                    </td>
                     <td style={{ fontFamily: "'Poppins', sans-serif" }}>{r.telefono ?? '—'}</td>
-                    <td style={{ fontFamily: "'Poppins', sans-serif", color: '#666' }}>{r.direccion ?? '—'}</td>
+                    <td style={{ fontFamily: "'Poppins', sans-serif", color: '#666', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {r.direccion ?? '—'}
+                    </td>
                     <td style={{ fontFamily: "'Poppins', sans-serif" }}>{r.fechaNacimiento ?? '—'}</td>
                     <td>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
-                        <button
-                          className="btn btn-secondary"
-                          style={{ padding: '5px 12px', fontSize: 12, gap: 5 }}
-                          onClick={() => openEdit(r)}
-                        >
+                        <button className="btn btn-secondary" style={{ padding: '5px 12px', fontSize: 12, gap: 5 }} onClick={() => openEdit(r)}>
                           <LuPencil size={13} /> Editar
                         </button>
-                        <button
-                          className="btn btn-danger"
-                          style={{ padding: '5px 12px', fontSize: 12, gap: 5 }}
-                          onClick={() => { if (confirm('¿Eliminar este cliente?')) deleteMut.mutate(r.idCliente) }}
-                        >
+                        <button className="btn btn-danger" style={{ padding: '5px 12px', fontSize: 12, gap: 5 }}
+                          onClick={() => { if (confirm('¿Eliminar este cliente?')) deleteMut.mutate(r.idCliente) }}>
                           <LuTrash2 size={13} />
                         </button>
                       </div>
@@ -167,11 +170,8 @@ export default function ClientesPage() {
               </button>
             </div>
             <div style={{ padding: '20px 28px 28px' }}>
-              <ClienteForm
-                initial={editing}
-                onClose={closeModal}
-                onSaved={() => { qc.invalidateQueries(['clientes']); closeModal() }}
-              />
+              <ClienteForm initial={editing} onClose={closeModal}
+                onSaved={() => { qc.invalidateQueries(['clientes']); closeModal() }} />
             </div>
           </div>
         </div>
@@ -182,8 +182,8 @@ export default function ClientesPage() {
 
 function ClienteForm({ initial, onClose, onSaved }) {
   const [form, setForm] = useState({
-    telefono: initial?.telefono ?? '',
-    direccion: initial?.direccion ?? '',
+    telefono:       initial?.telefono       ?? '',
+    direccion:      initial?.direccion      ?? '',
     fechaNacimiento: initial?.fechaNacimiento ?? '',
   })
   const f = k => e => setForm(p => ({ ...p, [k]: e.target.value }))
@@ -191,7 +191,7 @@ function ClienteForm({ initial, onClose, onSaved }) {
   const handleSave = async () => {
     try {
       if (initial) await clientesApi.update(initial.idCliente, form)
-      else await clientesApi.create(form)
+      else         await clientesApi.create(form)
       toast.success(initial ? 'Cliente actualizado' : 'Cliente creado')
       onSaved()
     } catch { toast.error('Error al guardar') }
@@ -199,6 +199,14 @@ function ClienteForm({ initial, onClose, onSaved }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {initial && (
+        <div style={{ background: '#f9f9f9', borderRadius: 12, padding: '12px 16px', border: '2px solid #e0e0e0' }}>
+          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 13, color: '#888', margin: 0 }}>Cliente</p>
+          <p style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 700, color: 'var(--ink)', margin: '4px 0 0', fontSize: 15 }}>
+            {getNombre(initial)}
+          </p>
+        </div>
+      )}
       <div>
         <label className="inp-label">Teléfono</label>
         <input className="inp" value={form.telefono} onChange={f('telefono')} placeholder="999 000 000" />
@@ -212,9 +220,7 @@ function ClienteForm({ initial, onClose, onSaved }) {
         <input type="date" className="inp" value={form.fechaNacimiento} onChange={f('fechaNacimiento')} />
       </div>
       <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-        <button className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>
-          Cancelar
-        </button>
+        <button className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>Cancelar</button>
         <button className="btn btn-primary" style={{ flex: 2, gap: 8 }} onClick={handleSave}>
           <LuCircleCheck size={16} /> Guardar
         </button>

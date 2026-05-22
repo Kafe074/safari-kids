@@ -6,6 +6,8 @@ import {
   LuPlus, LuPencil, LuTrash2, LuSearch, LuCalendar, LuFilter, LuX, LuCircleCheck,
 } from 'react-icons/lu'
 
+import { SUCURSALES } from '../../constants/sucursales'
+
 const ESTADO_COLORS = { Pendiente: 'warn', Confirmado: 'ok', Cancelado: 'err' }
 const ESTADOS = ['Todos', 'Pendiente', 'Confirmado', 'Cancelado']
 
@@ -112,7 +114,7 @@ export default function ReservasPage() {
                   <th>#</th>
                   <th>Cliente</th>
                   <th>Fecha</th>
-                  <th>Local</th>
+                  <th>Sucursal</th>
                   <th>Estado</th>
                   <th>Observaciones</th>
                   <th style={{ textAlign: 'right' }}>Acciones</th>
@@ -214,8 +216,11 @@ function ReservaForm({ initial, onClose, onSaved }) {
         <input type="date" className="inp" value={form.fechaReserva} onChange={f('fechaReserva')} />
       </div>
       <div>
-        <label className="inp-label">Local / Sede</label>
-        <input className="inp" placeholder="Ej: Sede Principal – Jr. Ayacucho 456" value={form.local} onChange={f('local')} />
+        <label className="inp-label">Sucursal</label>
+        <select className="inp" value={form.local} onChange={f('local')}>
+          <option value="">— Sin asignar —</option>
+          {SUCURSALES.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
       </div>
       <div>
         <label className="inp-label">Estado</label>

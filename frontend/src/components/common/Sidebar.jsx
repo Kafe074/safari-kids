@@ -44,6 +44,8 @@ export default function Sidebar({ collapsed }) {
       transition: 'width .25s',
       flexShrink: 0,
       borderRight: '4px solid #0F5527',
+      overflowY: 'auto',
+      overflowX: 'hidden',
     }}>
       {/* Logo */}
       <div style={{

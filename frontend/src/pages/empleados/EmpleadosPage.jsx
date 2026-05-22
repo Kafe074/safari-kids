@@ -6,6 +6,8 @@ import {
   LuPlus, LuPencil, LuTrash2, LuSearch, LuBriefcase, LuUsers, LuCircleCheck, LuX, LuFilter,
 } from 'react-icons/lu'
 
+import { SUCURSALES } from '../../constants/sucursales'
+
 const TURNO_COLORS = { Mañana: 'ok', Tarde: 'warn', Completo: 'info' }
 
 function getNombre(e) {
@@ -16,9 +18,9 @@ function getNombre(e) {
 
 export default function EmpleadosPage() {
   const qc = useQueryClient()
-  const [modal, setModal] = useState(false)
+  const [modal, setModal]     = useState(false)
   const [editing, setEditing] = useState(null)
-  const [search, setSearch] = useState('')
+  const [search, setSearch]   = useState('')
   const [filterEstado, setFilterEstado] = useState('Todos')
 
   const { data, isLoading } = useQuery({
@@ -47,7 +49,7 @@ export default function EmpleadosPage() {
       || String(r.idEmpleado ?? '').includes(q)
       || String(r.especialidad ?? '').toLowerCase().includes(q)
       || String(r.turno ?? '').toLowerCase().includes(q)
-      || String(r.local ?? '').toLowerCase().includes(q)
+      || String(r.sucursal ?? '').toLowerCase().includes(q)
       || nombre.includes(q)
     return matchEstado && matchSearch
   })
@@ -67,7 +69,9 @@ export default function EmpleadosPage() {
           <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 14, color: '#666', fontWeight: 400 }}>
             {all.length} empleado{all.length !== 1 ? 's' : ''} en el equipo
           </p>
-          <button className="btn btn-g" style={{ padding: '10px 22px', fontSize: 15, gap: 8, background: 'linear-gradient(180deg,#B47EFF 0%,#A855F7 100%)', boxShadow: '0 6px 0 #7E22CE, 0 12px 24px rgba(168,85,247,.4)', borderColor: '#7E22CE' }} onClick={openNew}>
+          <button className="btn btn-g"
+            style={{ padding: '10px 22px', fontSize: 15, gap: 8, background: 'linear-gradient(180deg,#B47EFF 0%,#A855F7 100%)', boxShadow: '0 6px 0 #7E22CE, 0 12px 24px rgba(168,85,247,.4)', borderColor: '#7E22CE' }}
+            onClick={openNew}>
             <LuPlus size={18} /> Nuevo Empleado
           </button>
         </div>
@@ -102,8 +106,8 @@ export default function EmpleadosPage() {
       <div className="card-chunky" style={{ padding: '18px 22px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 180 }}>
           <LuSearch size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#aaa' }} />
-          <input className="inp" placeholder="Buscar por nombre, especialidad, local..." value={search}
-            onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 36 }} />
+          <input className="inp" placeholder="Buscar por nombre, especialidad, sucursal..."
+            value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 36 }} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <LuFilter size={15} style={{ color: '#888' }} />
@@ -113,9 +117,7 @@ export default function EmpleadosPage() {
               fontWeight: 700, border: '2px solid var(--ink)', cursor: 'pointer', transition: 'all .15s',
               background: filterEstado === estado ? 'var(--ink)' : '#fff',
               color: filterEstado === estado ? '#fff' : 'var(--ink)',
-            }}>
-              {estado}
-            </button>
+            }}>{estado}</button>
           ))}
         </div>
       </div>
@@ -140,7 +142,7 @@ export default function EmpleadosPage() {
                   <th>#</th>
                   <th>Nombre Completo</th>
                   <th>Especialidad</th>
-                  <th>Local</th>
+                  <th>Sucursal</th>
                   <th>Turno</th>
                   <th>Estado</th>
                   <th style={{ textAlign: 'right' }}>Acciones</th>
@@ -161,11 +163,13 @@ export default function EmpleadosPage() {
                       {r.especialidad ?? '—'}
                     </td>
                     <td style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13 }}>
-                      {r.local ? (
+                      {r.sucursal ? (
                         <span style={{ background: '#f5f0ff', color: '#6d28d9', borderRadius: 8, padding: '3px 10px', fontWeight: 600, fontSize: 12 }}>
-                          {r.local}
+                          {r.sucursal.split('–')[0].trim()}
                         </span>
-                      ) : '—'}
+                      ) : (
+                        <span style={{ color: '#bbb' }}>Sin asignar</span>
+                      )}
                     </td>
                     <td>
                       <span className={`badge badge-${TURNO_COLORS[r.turno] ?? 'info'}`}>{r.turno ?? '—'}</span>
@@ -222,7 +226,7 @@ export default function EmpleadosPage() {
 function EmpleadoForm({ initial, onClose, onSaved }) {
   const [form, setForm] = useState({
     especialidad: initial?.especialidad ?? '',
-    local:        initial?.local        ?? '',
+    sucursal:     initial?.sucursal     ?? '',
     turno:        initial?.turno        ?? 'Mañana',
     estado:       initial?.estado       ?? 'Activo',
   })
@@ -231,7 +235,7 @@ function EmpleadoForm({ initial, onClose, onSaved }) {
   const handleSave = async () => {
     try {
       if (initial) await empleadosApi.update(initial.idEmpleado, form)
-      else await empleadosApi.create(form)
+      else         await empleadosApi.create(form)
       toast.success('Guardado correctamente')
       onSaved()
     } catch { toast.error('Error al guardar') }
@@ -244,20 +248,27 @@ function EmpleadoForm({ initial, onClose, onSaved }) {
         <input className="inp" value={form.especialidad} onChange={f('especialidad')} placeholder="Ej: Corte Infantil" />
       </div>
       <div>
-        <label className="inp-label">Local / Sede asignado</label>
-        <input className="inp" value={form.local} onChange={f('local')} placeholder="Ej: Sede Principal" />
-      </div>
-      <div>
-        <label className="inp-label">Turno</label>
-        <select className="inp" value={form.turno} onChange={f('turno')}>
-          {['Mañana', 'Tarde', 'Completo'].map(t => <option key={t}>{t}</option>)}
+        <label className="inp-label">Sucursal asignada</label>
+        <select className="inp" value={form.sucursal} onChange={f('sucursal')}>
+          <option value="">— Sin asignar —</option>
+          {SUCURSALES.map(s => (
+            <option key={s} value={s}>{s}</option>
+          ))}
         </select>
       </div>
-      <div>
-        <label className="inp-label">Estado</label>
-        <select className="inp" value={form.estado} onChange={f('estado')}>
-          {['Activo', 'Inactivo'].map(e => <option key={e}>{e}</option>)}
-        </select>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div>
+          <label className="inp-label">Turno</label>
+          <select className="inp" value={form.turno} onChange={f('turno')}>
+            {['Mañana', 'Tarde', 'Completo'].map(t => <option key={t}>{t}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="inp-label">Estado</label>
+          <select className="inp" value={form.estado} onChange={f('estado')}>
+            {['Activo', 'Inactivo'].map(e => <option key={e}>{e}</option>)}
+          </select>
+        </div>
       </div>
       <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
         <button className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>Cancelar</button>

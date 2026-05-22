@@ -6,5 +6,6 @@ import java.util.List;
 @Repository
 public interface EmpleadoRepository extends JpaRepository<Empleado, Integer> {
     List<Empleado> findByEstado(Empleado.EstadoEmpleado estado);
+    List<Empleado> findBySucursalAndEstado(String sucursal, Empleado.EstadoEmpleado estado);
     java.util.Optional<Empleado> findByUsuarioIdUsuario(Integer idUsuario);
 }
