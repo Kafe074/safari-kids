@@ -9,6 +9,7 @@ backend/target/
 backend/.mvn/
 backend/*.log
 *.class
+backend/src/main/resources/application-local.properties
 
 # ── Sistema ──────────────────────────────────
 .DS_Store

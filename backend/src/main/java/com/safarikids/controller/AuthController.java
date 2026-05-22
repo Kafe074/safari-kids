@@ -69,6 +69,8 @@ public class AuthController {
         Cliente cliente = Cliente.builder()
             .usuario(usuario)
             .telefono(req.getTelefono())
+            .direccion(req.getDireccion())
+            .fechaNacimiento(req.getFechaNacimiento())
             .build();
         clienteRepo.save(cliente);
 

@@ -3,22 +3,23 @@ import { useAuth } from '../../context/AuthContext'
 import {
   LuLayoutDashboard, LuCalendar, LuUsers, LuBriefcase, LuScissors,
   LuShoppingBag, LuBox, LuShoppingCart, LuClipboardList,
-  LuChartBar, LuSettings, LuLogOut,
+  LuChartBar, LuSettings, LuLogOut, LuTag,
 } from 'react-icons/lu'
 
 const NAV_ADMIN = [
-  { to:'/dashboard',       icon:<LuLayoutDashboard size={18} />,         label:'Dashboard' },
-  { to:'/reservas',        icon:<LuCalendar size={18} />,     label:'Reservas' },
-  { to:'/clientes',        icon:<LuUsers size={18} />,        label:'Clientes' },
-  { to:'/empleados',       icon:<LuBriefcase size={18} />,    label:'Empleados' },
-  { to:'/servicios-admin', icon:<LuScissors size={18} />,     label:'Servicios' },
-  { to:'/productos',       icon:<LuShoppingBag size={18} />,  label:'Productos' },
-  { to:'/inventario',      icon:<LuBox size={18} />,          label:'Inventario' },
-  { to:'/ventas',          icon:<LuShoppingCart size={18} />, label:'Ventas' },
-  { to:'/compras',         icon:<LuClipboardList size={18} />,label:'Compras' },
-  { to:'/reportes',        icon:<LuChartBar size={18} />,     label:'Reportes' },
-  { to:'/usuarios',        icon:<LuUsers size={18} />,        label:'Usuarios',  adminOnly:true },
-  { to:'/admin',           icon:<LuSettings size={18} />,     label:'Config',    adminOnly:true },
+  { to:'/dashboard',       icon:<LuLayoutDashboard size={18} />, label:'Dashboard' },
+  { to:'/reservas',        icon:<LuCalendar size={18} />,        label:'Reservas' },
+  { to:'/clientes',        icon:<LuUsers size={18} />,           label:'Clientes' },
+  { to:'/empleados',       icon:<LuBriefcase size={18} />,       label:'Empleados' },
+  { to:'/servicios-admin', icon:<LuScissors size={18} />,        label:'Servicios' },
+  { to:'/productos',       icon:<LuShoppingBag size={18} />,     label:'Productos' },
+  { to:'/inventario',      icon:<LuBox size={18} />,             label:'Inventario' },
+  { to:'/ventas',          icon:<LuShoppingCart size={18} />,    label:'Ventas' },
+  { to:'/compras',         icon:<LuClipboardList size={18} />,   label:'Compras' },
+  { to:'/promociones',     icon:<LuTag size={18} />,             label:'Promociones' },
+  { to:'/reportes',        icon:<LuChartBar size={18} />,        label:'Reportes' },
+  { to:'/usuarios',        icon:<LuUsers size={18} />,           label:'Usuarios', adminOnly:true },
+  { to:'/admin',           icon:<LuSettings size={18} />,        label:'Config',   adminOnly:true },
 ]
 
 const NAV_EMPLEADO = [

@@ -9,6 +9,12 @@ import {
 const ESTADO_COLORS = { Pendiente: 'warn', Confirmado: 'ok', Cancelado: 'err' }
 const ESTADOS = ['Todos', 'Pendiente', 'Confirmado', 'Cancelado']
 
+function getNombreCliente(r) {
+  const u = r?.cliente?.usuario
+  if (!u) return '—'
+  return `${u.nombres ?? ''} ${u.apellidos ?? ''}`.trim() || '—'
+}
+
 export default function ReservasPage() {
   const qc = useQueryClient()
   const [modal, setModal] = useState(false)
@@ -27,16 +33,19 @@ export default function ReservasPage() {
     onError: () => toast.error('Error al eliminar'),
   })
 
-  const openNew = () => { setEditing(null); setModal(true) }
+  const openNew  = () => { setEditing(null); setModal(true) }
   const openEdit = row => { setEditing(row); setModal(true) }
   const closeModal = () => setModal(false)
 
   const filtered = (data ?? []).filter(r => {
     const matchEstado = filterEstado === 'Todos' || r.estado === filterEstado
     const q = search.toLowerCase()
+    const nombre = getNombreCliente(r).toLowerCase()
     const matchSearch = !q || String(r.idReserva ?? '').includes(q)
       || String(r.fechaReserva ?? '').toLowerCase().includes(q)
       || String(r.observaciones ?? '').toLowerCase().includes(q)
+      || String(r.local ?? '').toLowerCase().includes(q)
+      || nombre.includes(q)
     return matchEstado && matchSearch
   })
 
@@ -55,11 +64,7 @@ export default function ReservasPage() {
           <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 14, color: '#666', fontWeight: 400 }}>
             Administra todas las reservas del salón
           </p>
-          <button
-            className="btn btn-g"
-            style={{ padding: '10px 22px', fontSize: 15, gap: 8 }}
-            onClick={openNew}
-          >
+          <button className="btn btn-g" style={{ padding: '10px 22px', fontSize: 15, gap: 8 }} onClick={openNew}>
             <LuPlus size={18} /> Nueva Reserva
           </button>
         </div>
@@ -69,27 +74,18 @@ export default function ReservasPage() {
       <div className="card-chunky" style={{ padding: '18px 22px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 180 }}>
           <LuSearch size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#aaa' }} />
-          <input
-            className="inp"
-            placeholder="Buscar reservas..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{ paddingLeft: 36 }}
-          />
+          <input className="inp" placeholder="Buscar por cliente, fecha, local..." value={search}
+            onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 36 }} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <LuFilter size={15} style={{ color: '#888' }} />
           {ESTADOS.map(e => (
-            <button
-              key={e}
-              onClick={() => setFilterEstado(e)}
-              style={{
-                padding: '6px 14px', borderRadius: 999, fontSize: 13, fontFamily: "'Poppins', sans-serif",
-                fontWeight: 700, border: '2px solid var(--ink)', cursor: 'pointer', transition: 'all .15s',
-                background: filterEstado === e ? 'var(--ink)' : '#fff',
-                color: filterEstado === e ? '#fff' : 'var(--ink)',
-              }}
-            >
+            <button key={e} onClick={() => setFilterEstado(e)} style={{
+              padding: '6px 14px', borderRadius: 999, fontSize: 13, fontFamily: "'Poppins', sans-serif",
+              fontWeight: 700, border: '2px solid var(--ink)', cursor: 'pointer', transition: 'all .15s',
+              background: filterEstado === e ? 'var(--ink)' : '#fff',
+              color: filterEstado === e ? '#fff' : 'var(--ink)',
+            }}>
               {e}
             </button>
           ))}
@@ -114,7 +110,9 @@ export default function ReservasPage() {
               <thead>
                 <tr>
                   <th>#</th>
+                  <th>Cliente</th>
                   <th>Fecha</th>
+                  <th>Local</th>
                   <th>Estado</th>
                   <th>Observaciones</th>
                   <th style={{ textAlign: 'right' }}>Acciones</th>
@@ -128,27 +126,30 @@ export default function ReservasPage() {
                         #{r.idReserva}
                       </span>
                     </td>
+                    <td style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600 }}>
+                      {getNombreCliente(r)}
+                    </td>
                     <td style={{ fontFamily: "'Poppins', sans-serif" }}>{r.fechaReserva ?? '—'}</td>
+                    <td style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13 }}>
+                      {r.local ? (
+                        <span style={{ background: '#e8f5e9', color: '#1b5e20', borderRadius: 8, padding: '3px 10px', fontWeight: 600, fontSize: 12 }}>
+                          {r.local}
+                        </span>
+                      ) : '—'}
+                    </td>
                     <td>
                       <span className={`badge badge-${ESTADO_COLORS[r.estado] ?? 'info'}`}>{r.estado}</span>
                     </td>
-                    <td style={{ fontFamily: "'Poppins', sans-serif", color: '#666', maxWidth: 260 }}>
+                    <td style={{ fontFamily: "'Poppins', sans-serif", color: '#666', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {r.observaciones ?? '—'}
                     </td>
                     <td>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
-                        <button
-                          className="btn btn-secondary"
-                          style={{ padding: '5px 12px', fontSize: 12, gap: 5 }}
-                          onClick={() => openEdit(r)}
-                        >
+                        <button className="btn btn-secondary" style={{ padding: '5px 12px', fontSize: 12, gap: 5 }} onClick={() => openEdit(r)}>
                           <LuPencil size={13} /> Editar
                         </button>
-                        <button
-                          className="btn btn-danger"
-                          style={{ padding: '5px 12px', fontSize: 12, gap: 5 }}
-                          onClick={() => { if (confirm('¿Eliminar esta reserva?')) deleteMut.mutate(r.idReserva) }}
-                        >
+                        <button className="btn btn-danger" style={{ padding: '5px 12px', fontSize: 12, gap: 5 }}
+                          onClick={() => { if (confirm('¿Eliminar esta reserva?')) deleteMut.mutate(r.idReserva) }}>
                           <LuTrash2 size={13} />
                         </button>
                       </div>
@@ -167,7 +168,7 @@ export default function ReservasPage() {
       {/* ── Modal ── */}
       {modal && (
         <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) closeModal() }}>
-          <div className="modal-box" style={{ maxWidth: 520 }}>
+          <div className="modal-box" style={{ maxWidth: 540 }}>
             <div className="modal-header">
               <h2 style={{ fontFamily: "'Fredoka One', cursive", fontSize: 22, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <LuCalendar size={20} color="var(--green)" />
@@ -178,11 +179,8 @@ export default function ReservasPage() {
               </button>
             </div>
             <div style={{ padding: '20px 28px 28px' }}>
-              <ReservaForm
-                initial={editing}
-                onClose={closeModal}
-                onSaved={() => { qc.invalidateQueries(['reservas']); closeModal() }}
-              />
+              <ReservaForm initial={editing} onClose={closeModal}
+                onSaved={() => { qc.invalidateQueries(['reservas']); closeModal() }} />
             </div>
           </div>
         </div>
@@ -193,8 +191,9 @@ export default function ReservasPage() {
 
 function ReservaForm({ initial, onClose, onSaved }) {
   const [form, setForm] = useState({
-    fechaReserva: initial?.fechaReserva ?? '',
-    estado: initial?.estado ?? 'Pendiente',
+    fechaReserva:  initial?.fechaReserva  ?? '',
+    local:         initial?.local         ?? '',
+    estado:        initial?.estado        ?? 'Pendiente',
     observaciones: initial?.observaciones ?? '',
   })
   const f = k => e => setForm(p => ({ ...p, [k]: e.target.value }))
@@ -215,6 +214,10 @@ function ReservaForm({ initial, onClose, onSaved }) {
         <input type="date" className="inp" value={form.fechaReserva} onChange={f('fechaReserva')} />
       </div>
       <div>
+        <label className="inp-label">Local / Sede</label>
+        <input className="inp" placeholder="Ej: Sede Principal – Jr. Ayacucho 456" value={form.local} onChange={f('local')} />
+      </div>
+      <div>
         <label className="inp-label">Estado</label>
         <select className="inp" value={form.estado} onChange={f('estado')}>
           {['Pendiente', 'Confirmado', 'Cancelado'].map(e => <option key={e}>{e}</option>)}
@@ -225,9 +228,7 @@ function ReservaForm({ initial, onClose, onSaved }) {
         <textarea className="inp" rows={3} value={form.observaciones} onChange={f('observaciones')} />
       </div>
       <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-        <button className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>
-          Cancelar
-        </button>
+        <button className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>Cancelar</button>
         <button className="btn btn-primary" style={{ flex: 2, gap: 8 }} onClick={handleSave}>
           <LuCircleCheck size={16} /> Guardar reserva
         </button>

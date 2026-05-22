@@ -127,6 +127,7 @@ public class ReservaController {
             .asiento(asiento)
             .fechaReserva(fechaDate)
             .estado(Reserva.EstadoReserva.Pendiente)
+            .local(req.getLocal())
             .observaciones(req.getObservaciones())
             .build();
         repository.save(reserva);
@@ -203,6 +204,7 @@ public class ReservaController {
         private String fecha;
         private String horaInicio;
         private Integer idServicio;
+        private String local;
         private String observaciones;
     }
 }

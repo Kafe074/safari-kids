@@ -62,7 +62,8 @@ public class SecurityConfig {
             .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/productos/**", "/api/servicios/**", "/api/categoria-productos/**", "/api/horarios/**", "/api/asientos/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/productos/**", "/api/servicios/**", "/api/categoria-productos/**", "/api/horarios/**", "/api/asientos/**", "/api/promociones/activas").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/promociones/validar-codigo").permitAll()
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authProvider())

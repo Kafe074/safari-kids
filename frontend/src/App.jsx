@@ -34,6 +34,13 @@ import EmpleadoReservas from './pages/empleado/EmpleadoReservas'
 import TiendaPage      from './pages/tienda/TiendaPage'
 import CarritoPage     from './pages/tienda/CarritoPage'
 
+import PromocionesPage       from './pages/promociones/PromocionesPage'
+import HorariosConfigPage    from './pages/admin/config/HorariosConfigPage'
+import AsientosConfigPage    from './pages/admin/config/AsientosConfigPage'
+import InsumosConfigPage     from './pages/admin/config/InsumosConfigPage'
+import NotificacionesConfigPage from './pages/admin/config/NotificacionesConfigPage'
+import SeguridadConfigPage   from './pages/admin/config/SeguridadConfigPage'
+
 export default function App() {
   return (
     <AuthProvider>
@@ -60,25 +67,31 @@ export default function App() {
             </Route>
           </Route>
 
-          {/* SOLO ADMINISTRADOR */}
+          {/* ADMINISTRADOR */}
           <Route element={<PrivateRoute allowedRoles={['ADMINISTRADOR']} />}>
             <Route element={<MainLayout />}>
-              <Route path="/dashboard"       element={<Dashboard />} />
-              <Route path="/reservas"        element={<ReservasPage />} />
-              <Route path="/clientes"        element={<ClientesPage />} />
-              <Route path="/empleados"       element={<EmpleadosPage />} />
-              <Route path="/servicios-admin" element={<ServiciosPage />} />
-              <Route path="/inventario"      element={<InventarioPage />} />
-              <Route path="/productos"       element={<ProductosPage />} />
-              <Route path="/ventas"          element={<VentasPage />} />
-              <Route path="/compras"         element={<ComprasPage />} />
-              <Route path="/reportes"        element={<ReportesPage />} />
-              <Route path="/usuarios"        element={<AdminRoute><UsuariosPage /></AdminRoute>} />
-              <Route path="/admin"           element={<AdminRoute><AdminPage /></AdminRoute>} />
+              <Route path="/dashboard"            element={<Dashboard />} />
+              <Route path="/reservas"             element={<ReservasPage />} />
+              <Route path="/clientes"             element={<ClientesPage />} />
+              <Route path="/empleados"            element={<EmpleadosPage />} />
+              <Route path="/servicios-admin"      element={<ServiciosPage />} />
+              <Route path="/inventario"           element={<InventarioPage />} />
+              <Route path="/productos"            element={<ProductosPage />} />
+              <Route path="/ventas"               element={<VentasPage />} />
+              <Route path="/compras"              element={<ComprasPage />} />
+              <Route path="/reportes"             element={<ReportesPage />} />
+              <Route path="/promociones"          element={<PromocionesPage />} />
+              <Route path="/usuarios"             element={<AdminRoute><UsuariosPage /></AdminRoute>} />
+              <Route path="/admin"                element={<AdminRoute><AdminPage /></AdminRoute>} />
+              <Route path="/admin/horarios"       element={<AdminRoute><HorariosConfigPage /></AdminRoute>} />
+              <Route path="/admin/asientos"       element={<AdminRoute><AsientosConfigPage /></AdminRoute>} />
+              <Route path="/admin/insumos"        element={<AdminRoute><InsumosConfigPage /></AdminRoute>} />
+              <Route path="/admin/notificaciones" element={<AdminRoute><NotificacionesConfigPage /></AdminRoute>} />
+              <Route path="/admin/seguridad"      element={<AdminRoute><SeguridadConfigPage /></AdminRoute>} />
             </Route>
           </Route>
 
-          {/* SOLO EMPLEADO */}
+          {/* EMPLEADO */}
           <Route element={<PrivateRoute allowedRoles={['EMPLEADO']} />}>
             <Route element={<MainLayout />}>
               <Route path="/empleado"  element={<EmpleadoHome />} />

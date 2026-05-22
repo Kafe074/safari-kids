@@ -23,6 +23,19 @@ public class Promocion {
     @Column(nullable = false, precision = 5, scale = 2)
     private BigDecimal descuento;
 
+    @Column(unique = true, length = 50)
+    private String codigo;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private TipoPromocion tipo = TipoPromocion.Global;
+
+    @Column(nullable = false)
+    private Boolean primerServicio = false;
+
+    @Column(nullable = false)
+    private Boolean primerProducto = false;
+
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
 
@@ -34,7 +47,9 @@ public class Promocion {
     @JoinTable(name = "Promocion_Servicio",
         joinColumns = @JoinColumn(name = "id_promocion"),
         inverseJoinColumns = @JoinColumn(name = "id_servicio"))
+    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     private Set<Servicio> servicios;
 
+    public enum TipoPromocion { Global, Codigo, PrimerServicio }
     public enum EstadoPromocion { Activa, Inactiva }
 }

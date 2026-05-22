@@ -3,9 +3,11 @@ package com.safarikids.controller;
 import com.safarikids.dto.ApiResponse;
 import com.safarikids.model.Usuario;
 import com.safarikids.repository.UsuarioRepository;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
@@ -54,5 +56,23 @@ public class UsuarioController {
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Integer id) {
         repository.deleteById(id);
         return ResponseEntity.ok(ApiResponse.ok("Eliminado", null));
+    }
+
+    @PutMapping("/cambiar-password")
+    public ResponseEntity<ApiResponse<Void>> cambiarPassword(@RequestBody CambiarPasswordRequest req) {
+        String correo = SecurityContextHolder.getContext().getAuthentication().getName();
+        return repository.findByCorreo(correo).map(u -> {
+            if (!passwordEncoder.matches(req.getActual(), u.getContrasena()))
+                return ResponseEntity.badRequest().<ApiResponse<Void>>body(ApiResponse.error("Contraseña actual incorrecta"));
+            u.setContrasena(passwordEncoder.encode(req.getNueva()));
+            repository.save(u);
+            return ResponseEntity.ok(ApiResponse.<Void>ok("Contraseña actualizada", null));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @Data
+    public static class CambiarPasswordRequest {
+        private String actual;
+        private String nueva;
     }
 }

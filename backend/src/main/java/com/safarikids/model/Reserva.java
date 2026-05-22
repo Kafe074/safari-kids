@@ -35,6 +35,9 @@ public class Reserva {
     @Column(length = 20)
     private EstadoReserva estado = EstadoReserva.Pendiente;
 
+    @Column(length = 100)
+    private String local;
+
     @Column(length = 200)
     private String observaciones;
 

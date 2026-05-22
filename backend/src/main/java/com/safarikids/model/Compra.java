@@ -14,7 +14,7 @@ public class Compra {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer idCompra;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_proveedor", nullable = false)
     private Proveedor proveedor;
 

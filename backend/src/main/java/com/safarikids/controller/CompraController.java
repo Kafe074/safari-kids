@@ -29,6 +29,7 @@ public class CompraController {
         return ResponseEntity.ok(ApiResponse.ok(repository.findAll()));
     }
 
+    @Transactional(readOnly = true)
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Compra>> getById(@PathVariable Integer id) {
         return repository.findById(id)
