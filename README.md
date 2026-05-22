@@ -23,7 +23,7 @@ Sistema web completo para una peluquería infantil temática. Incluye portal pú
 
 | Servicio | URL |
 |----------|-----|
-| Frontend | Vercel (configurar en dashboard) |
+| Frontend | `https://safarikids.vercel.app` |
 | Backend API | `https://safari-kids.up.railway.app` |
 
 ---
