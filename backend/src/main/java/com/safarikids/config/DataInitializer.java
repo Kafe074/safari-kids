@@ -111,13 +111,21 @@ public class DataInitializer implements CommandLineRunner {
             {"Set Ligas Colores x50",catAcc,12.00,7.00},{"Peineta Decorada",catAcc,8.00,4.00},
         };
 
+        String[] sucursales = {
+            "Sede Principal – Jr. Ayacucho 456",
+            "El Tambo – Av. Ferrocarril 789",
+            "Chilca – Calle Real 234"
+        };
         for (Object[] p : productos) {
             Producto prod = productoRepo.save(Producto.builder()
                 .nombre((String)p[0]).categoria((CategoriaProducto)p[1])
                 .precioVenta(BigDecimal.valueOf((Double)p[2])).costo(BigDecimal.valueOf((Double)p[3]))
                 .estado(Producto.EstadoProducto.Activo).build());
-            inventarioRepo.save(Inventario.builder()
-                .producto(prod).stockActual((int)(Math.random()*50)+10).stockMinimo(5).ubicacion("Estante A").build());
+            for (String suc : sucursales) {
+                inventarioRepo.save(Inventario.builder()
+                    .producto(prod).stockActual((int)(Math.random()*30)+5).stockMinimo(5)
+                    .ubicacion("Estante A").sucursal(suc).build());
+            }
         }
 
         // ── Proveedor ─────────────────────────────────────────────────────

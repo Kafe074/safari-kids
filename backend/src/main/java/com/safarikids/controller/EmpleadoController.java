@@ -45,8 +45,13 @@ public class EmpleadoController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Empleado>> update(@PathVariable Integer id, @RequestBody Empleado empleado) {
-        if (!repository.existsById(id)) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(ApiResponse.ok("Actualizado", repository.save(empleado)));
+        return repository.findById(id).map(existing -> {
+            existing.setEspecialidad(empleado.getEspecialidad());
+            existing.setSucursal(empleado.getSucursal());
+            existing.setTurno(empleado.getTurno());
+            existing.setEstado(empleado.getEstado());
+            return ResponseEntity.ok(ApiResponse.ok("Actualizado", repository.save(existing)));
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")

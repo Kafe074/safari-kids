@@ -70,10 +70,19 @@ public class CompraController {
                     (suc != null && !suc.isBlank())
                         ? inventarioRepo.findByProductoIdProductoAndSucursal(item.getIdProducto(), suc)
                         : inventarioRepo.findByProductoIdProducto(item.getIdProducto());
-                invOpt.ifPresent(inv -> {
+                if (invOpt.isPresent()) {
+                    Inventario inv = invOpt.get();
                     inv.setStockActual(inv.getStockActual() + item.getCantidad());
                     inventarioRepo.save(inv);
-                });
+                } else {
+                    inventarioRepo.save(Inventario.builder()
+                        .producto(prod)
+                        .stockActual(item.getCantidad())
+                        .stockMinimo(5)
+                        .ubicacion("")
+                        .sucursal(suc)
+                        .build());
+                }
             }
         }
         return ResponseEntity.ok(ApiResponse.ok("Compra registrada", compra.getIdCompra()));

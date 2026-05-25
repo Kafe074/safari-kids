@@ -41,5 +41,8 @@ public class Reserva {
     @Column(length = 200)
     private String observaciones;
 
+    @Column(length = 20, unique = true)
+    private String codigoReserva;
+
     public enum EstadoReserva { Pendiente, Confirmado, Cancelado }
 }

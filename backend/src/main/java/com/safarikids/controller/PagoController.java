@@ -15,6 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -48,6 +49,32 @@ public class PagoController {
                 return ResponseEntity.ok(ApiResponse.ok(boleta));
             })
             .orElse(ResponseEntity.notFound().build());
+    }
+
+    @Transactional
+    @PatchMapping("/validar-efectivo/{codigoReserva}")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> validarEfectivo(@PathVariable String codigoReserva) {
+        Optional<Reserva> reservaOpt = reservaRepo.findByCodigoReserva(codigoReserva.toUpperCase());
+        if (reservaOpt.isEmpty()) {
+            return ResponseEntity.status(404).body(ApiResponse.error("Código de reserva no válido"));
+        }
+        Reserva reserva = reservaOpt.get();
+        Optional<Pago> pagoOpt = repository.findByReservaIdReserva(reserva.getIdReserva());
+        if (pagoOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("No hay pago registrado para esta reserva"));
+        }
+        Pago pago = pagoOpt.get();
+        if (pago.getEstado() != Pago.EstadoPago.Pendiente) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Este pago ya fue validado anteriormente"));
+        }
+        if (pago.getMetodoPago() != Pago.MetodoPago.Efectivo) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Esta reserva no es de pago en efectivo"));
+        }
+        pago.setEstado(Pago.EstadoPago.Pagado);
+        repository.save(pago);
+        reserva.setEstado(Reserva.EstadoReserva.Confirmado);
+        reservaRepo.save(reserva);
+        return ResponseEntity.ok(ApiResponse.ok("Pago validado exitosamente", buildBoleta(pago)));
     }
 
     @GetMapping("/reserva/{idReserva}")
@@ -121,19 +148,24 @@ public class PagoController {
         BigDecimal montoFinal = precioBase.subtract(descuento).max(BigDecimal.ZERO);
         String referencia = "SIM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
+        Pago.MetodoPago metodo = Pago.MetodoPago.valueOf(req.getMetodoPago() != null ? req.getMetodoPago() : "Simulado");
+        boolean esEfectivo = metodo == Pago.MetodoPago.Efectivo;
+
         Pago pago = Pago.builder()
             .reserva(reserva)
             .montoTotal(montoFinal)
-            .metodoPago(Pago.MetodoPago.valueOf(req.getMetodoPago() != null ? req.getMetodoPago() : "Simulado"))
+            .metodoPago(metodo)
             .fechaPago(LocalDate.now())
-            .estado(Pago.EstadoPago.Pagado)
+            .estado(esEfectivo ? Pago.EstadoPago.Pendiente : Pago.EstadoPago.Pagado)
             .referencia(referencia)
             .build();
         repository.save(pago);
 
-        // Confirmar la reserva automáticamente al pagar
-        reserva.setEstado(Reserva.EstadoReserva.Confirmado);
-        reservaRepo.save(reserva);
+        // Solo confirmar la reserva si no es pago en efectivo
+        if (!esEfectivo) {
+            reserva.setEstado(Reserva.EstadoReserva.Confirmado);
+            reservaRepo.save(reserva);
+        }
 
         Map<String, Object> boleta = buildBoleta(pago);
         if (promoAplicada != null) {
@@ -169,9 +201,10 @@ public class PagoController {
 
         if (pago.getReserva() != null) {
             Reserva r = pago.getReserva();
-            b.put("idReserva",   r.getIdReserva());
+            b.put("idReserva",    r.getIdReserva());
             b.put("fechaReserva", r.getFechaReserva() != null ? r.getFechaReserva().toString() : "");
-            b.put("local",       r.getLocal() != null ? r.getLocal() : "");
+            b.put("local",        r.getLocal() != null ? r.getLocal() : "");
+            if (r.getCodigoReserva() != null) b.put("codigoReserva", r.getCodigoReserva());
 
             if (r.getCliente() != null && r.getCliente().getUsuario() != null) {
                 var u = r.getCliente().getUsuario();

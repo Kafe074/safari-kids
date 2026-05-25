@@ -7,5 +7,6 @@ export const inventarioApi = {
   create:       (data)           => api.post(BASE, data),
   update:       (id, data)       => api.put(`${BASE}/${id}`, data),
   patchStock:   (id, stock)      => api.patch(`${BASE}/${id}/stock`, { stockActual: stock }),
-  remove:       (id)             => api.delete(`${BASE}/${id}`),
+  remove:               (id)    => api.delete(`${BASE}/${id}`),
+  inicializarSucursales: ()     => api.post(`${BASE}/inicializar-sucursales`),
 }

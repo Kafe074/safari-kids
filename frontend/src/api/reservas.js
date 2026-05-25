@@ -4,6 +4,7 @@ export const reservasApi = {
   getAll:        ()         => api.get(BASE),
   getById:       (id)       => api.get(BASE + '/' + id),
   crear:         (data)     => api.post(BASE + '/crear', data),
+  porCodigo:     (codigo)   => api.get(BASE + '/codigo/' + codigo),
   misReservas:   ()         => api.get(BASE + '/mis-reservas'),
   misAsignadas:  ()         => api.get(BASE + '/mis-asignadas'),
   cancelar:      (id)       => api.patch(BASE + '/' + id + '/cancelar'),

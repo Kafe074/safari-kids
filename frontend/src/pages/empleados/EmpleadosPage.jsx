@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { empleadosApi } from '../../api/empleados'
+import api from '../../api/axios'
 import toast from 'react-hot-toast'
 import {
-  LuPlus, LuPencil, LuTrash2, LuSearch, LuBriefcase, LuUsers, LuCircleCheck, LuX, LuFilter,
+  LuPlus, LuPencil, LuTrash2, LuSearch, LuBriefcase, LuUsers, LuCircleCheck, LuX, LuFilter, LuShieldCheck,
 } from 'react-icons/lu'
 
 import { SUCURSALES } from '../../constants/sucursales'
@@ -230,16 +231,49 @@ function EmpleadoForm({ initial, onClose, onSaved }) {
     turno:        initial?.turno        ?? 'Mañana',
     estado:       initial?.estado       ?? 'Activo',
   })
+  const [showPwd, setShowPwd]   = useState(false)
+  const [password, setPassword] = useState('')
+  const [checking, setChecking] = useState(false)
   const f = k => e => setForm(p => ({ ...p, [k]: e.target.value }))
 
-  const handleSave = async () => {
+  const handleSave = () => setShowPwd(true)
+
+  const confirmSave = async () => {
+    if (!password.trim()) { toast.error('Ingresa tu contraseña'); return }
+    setChecking(true)
     try {
+      const res = await api.post('/auth/verify-password', { contrasena: password })
+      if (!res.data.data) { toast.error('Contraseña incorrecta'); setChecking(false); return }
       if (initial) await empleadosApi.update(initial.idEmpleado, form)
       else         await empleadosApi.create(form)
       toast.success('Guardado correctamente')
       onSaved()
     } catch { toast.error('Error al guardar') }
+    finally { setChecking(false) }
   }
+
+  if (showPwd) return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ background: '#fff8e1', border: '3px solid var(--yellow)', borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <LuShieldCheck size={20} color="#b38600" />
+        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 13, color: '#7c5607', margin: 0 }}>
+          Confirma tu contraseña para guardar los cambios
+        </p>
+      </div>
+      <div>
+        <label className="inp-label">Contraseña</label>
+        <input type="password" className="inp" value={password} onChange={e => setPassword(e.target.value)}
+          placeholder="Tu contraseña de administrador" autoFocus
+          onKeyDown={e => e.key === 'Enter' && confirmSave()} />
+      </div>
+      <div style={{ display: 'flex', gap: 10 }}>
+        <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => { setShowPwd(false); setPassword('') }}>Cancelar</button>
+        <button className="btn btn-primary" style={{ flex: 2, gap: 8 }} onClick={confirmSave} disabled={checking}>
+          {checking ? 'Verificando...' : <><LuShieldCheck size={16} /> Confirmar y guardar</>}
+        </button>
+      </div>
+    </div>
+  )
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

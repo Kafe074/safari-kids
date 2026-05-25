@@ -7,7 +7,7 @@ import Modal       from '../../components/common/Modal'
 import toast from 'react-hot-toast'
 import { SUCURSALES } from '../../constants/sucursales'
 import {
-  LuBox, LuCircleCheck, LuTriangleAlert, LuMapPin, LuPlus, LuPencil, LuTrash2, LuX,
+  LuBox, LuCircleCheck, LuTriangleAlert, LuMapPin, LuPlus, LuPencil, LuTrash2, LuX, LuRefreshCw,
 } from 'react-icons/lu'
 
 const TABS = ['Todas', ...SUCURSALES.map(s => s.split('–')[0].trim())]
@@ -45,6 +45,15 @@ export default function InventarioPage() {
     } catch { toast.error('Error al eliminar') }
   }
 
+  const handleInicializar = async () => {
+    if (!confirm('Esto eliminará el inventario sin sucursal y creará registros para cada sucursal. ¿Continuar?')) return
+    try {
+      const res = await inventarioApi.inicializarSucursales()
+      qc.invalidateQueries(['inventario'])
+      toast.success(res.data.message || 'Inventario inicializado')
+    } catch { toast.error('Error al inicializar inventario') }
+  }
+
   // Contar bajos por sucursal para badge
   const bajosPorSucursal = SUCURSALES.map(s =>
     invData.filter(i => i.sucursal === s && i.stockActual <= (i.stockMinimo ?? 5)).length
@@ -54,6 +63,9 @@ export default function InventarioPage() {
     <div style={{ padding: '32px 28px', minHeight: '100vh', background: '#F8FDF8' }}>
 
       <PageHeader title="Inventario & Stock" subtitle="Control de stock por sucursal en tiempo real">
+        <button className="btn btn-secondary" onClick={handleInicializar} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <LuRefreshCw size={15} /> Inicializar sucursales
+        </button>
         <button className="btn btn-secondary" onClick={() => setModalProd(true)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <LuBox size={15} /> Productos
         </button>

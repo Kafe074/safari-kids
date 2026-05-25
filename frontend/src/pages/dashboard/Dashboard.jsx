@@ -73,64 +73,42 @@ export default function Dashboard() {
         {cards.map(c => <StatCard key={c.label} {...c} />)}
       </div>
 
-      {/* Quick access + System status */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20, flexWrap: 'wrap' }}>
-
-        {/* Quick access */}
-        <div className="card-admin">
-          <h3 style={{ fontFamily: "'Fredoka One',cursive", fontWeight: 400, color: 'var(--ink)', marginBottom: 16, fontSize: 18 }}>
-            Accesos Rápidos
-          </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            {accesos.map(a => (
-              <Link key={a.to} to={a.to} style={{ textDecoration: 'none' }}>
-                <div
-                  className="card-chunky"
-                  style={{
-                    padding: '14px 16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    transition: 'all .15s',
-                    cursor: 'pointer',
-                    color: a.color,
-                  }}
-                  onMouseOver={e => {
-                    e.currentTarget.style.transform = 'translate(-2px,-2px)'
-                    e.currentTarget.style.boxShadow = '10px 10px 0 var(--ink)'
-                  }}
-                  onMouseOut={e => {
-                    e.currentTarget.style.transform = 'translate(0,0)'
-                    e.currentTarget.style.boxShadow = '8px 8px 0 var(--ink)'
-                  }}
-                >
-                  <span style={{ color: a.color, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-                    {a.icon}
-                  </span>
-                  <span style={{ fontFamily: "'Fredoka One',cursive", color: 'var(--ink)', fontSize: 15, lineHeight: 1.2 }}>
-                    {a.label}
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* System status */}
-        <div className="card-admin">
-          <h3 style={{ fontFamily: "'Fredoka One',cursive", fontWeight: 400, color: 'var(--ink)', marginBottom: 16, fontSize: 18 }}>
-            Estado del Sistema
-          </h3>
-          {[
-            ['Base de datos', 'Conectada', 'ok'],
-            ['API REST',      'Activa',    'ok'],
-            ['Autenticación JWT', 'Activa','ok'],
-            ['Seed de datos', 'Cargado',   'ok'],
-          ].map(([label, val, st]) => (
-            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f0ebe0' }}>
-              <span style={{ fontSize: 12, color: '#666' }}>{label}</span>
-              <span className={`badge badge-${st === 'ok' ? 'ok' : 'warn'}`}>{val}</span>
-            </div>
+      {/* Quick access */}
+      <div className="card-admin">
+        <h3 style={{ fontFamily: "'Fredoka One',cursive", fontWeight: 400, color: 'var(--ink)', marginBottom: 16, fontSize: 18 }}>
+          Accesos Rápidos
+        </h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12 }}>
+          {accesos.map(a => (
+            <Link key={a.to} to={a.to} style={{ textDecoration: 'none' }}>
+              <div
+                className="card-chunky"
+                style={{
+                  padding: '14px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  transition: 'all .15s',
+                  cursor: 'pointer',
+                  color: a.color,
+                }}
+                onMouseOver={e => {
+                  e.currentTarget.style.transform = 'translate(-2px,-2px)'
+                  e.currentTarget.style.boxShadow = '10px 10px 0 var(--ink)'
+                }}
+                onMouseOut={e => {
+                  e.currentTarget.style.transform = 'translate(0,0)'
+                  e.currentTarget.style.boxShadow = '8px 8px 0 var(--ink)'
+                }}
+              >
+                <span style={{ color: a.color, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                  {a.icon}
+                </span>
+                <span style={{ fontFamily: "'Fredoka One',cursive", color: 'var(--ink)', fontSize: 15, lineHeight: 1.2 }}>
+                  {a.label}
+                </span>
+              </div>
+            </Link>
           ))}
         </div>
       </div>

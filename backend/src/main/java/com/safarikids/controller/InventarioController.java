@@ -78,6 +78,32 @@ public class InventarioController {
         return ResponseEntity.ok(ApiResponse.ok("Eliminado", null));
     }
 
+    @Transactional
+    @PostMapping("/inicializar-sucursales")
+    public ResponseEntity<ApiResponse<String>> inicializarSucursales() {
+        String[] sucursales = {
+            "Sede Principal – Jr. Ayacucho 456",
+            "El Tambo – Av. Ferrocarril 789",
+            "Chilca – Calle Real 234"
+        };
+        List<Inventario> sinSucursal = repository.findBySucursalIsNull();
+        repository.deleteAll(sinSucursal);
+
+        List<Producto> productos = productoRepo.findAll();
+        int creados = 0;
+        for (Producto prod : productos) {
+            for (String suc : sucursales) {
+                if (repository.findByProductoIdProductoAndSucursal(prod.getIdProducto(), suc).isEmpty()) {
+                    repository.save(Inventario.builder()
+                        .producto(prod).stockActual(0).stockMinimo(5)
+                        .ubicacion("Estante A").sucursal(suc).build());
+                    creados++;
+                }
+            }
+        }
+        return ResponseEntity.ok(ApiResponse.ok("Inventario inicializado: " + creados + " registros creados"));
+    }
+
     @Data public static class InventarioRequest {
         private Integer idProducto;
         private Integer stockActual;

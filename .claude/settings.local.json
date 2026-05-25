@@ -97,7 +97,10 @@
       "Bash(apt-cache show *)",
       "Bash(apt-get install *)",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Update:', d.get\\('message'\\)\\)\")",
-      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('OK Lucía:', d.get\\('data',{}\\).get\\('sucursal'\\)\\)\")"
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('OK Lucía:', d.get\\('data',{}\\).get\\('sucursal'\\)\\)\")",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(npx tsc *)"
     ],
     "additionalDirectories": [
       "/tmp",

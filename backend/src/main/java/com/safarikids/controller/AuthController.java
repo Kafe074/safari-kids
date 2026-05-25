@@ -11,10 +11,12 @@ import com.safarikids.security.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.*;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -43,6 +45,21 @@ public class AuthController {
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(401).body(ApiResponse.error("Credenciales incorrectas"));
         }
+    }
+
+    @PostMapping("/verify-password")
+    public ResponseEntity<ApiResponse<Boolean>> verifyPassword(@RequestBody Map<String, String> body) {
+        String correo = SecurityContextHolder.getContext().getAuthentication().getName();
+        if ("anonymousUser".equals(correo)) {
+            return ResponseEntity.status(401).body(ApiResponse.error("No autenticado"));
+        }
+        String rawPassword = body.get("contrasena");
+        if (rawPassword == null || rawPassword.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Contraseña requerida"));
+        }
+        return usuarioRepo.findByCorreo(correo)
+            .map(u -> ResponseEntity.ok(ApiResponse.ok(passwordEncoder.matches(rawPassword, u.getContrasena()))))
+            .orElse(ResponseEntity.status(404).body(ApiResponse.error("Usuario no encontrado")));
     }
 
     @PostMapping("/register")

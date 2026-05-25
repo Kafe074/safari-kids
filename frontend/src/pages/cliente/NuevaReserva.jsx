@@ -9,7 +9,7 @@ import { promocionesApi } from '../../api/promociones'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
 import {
-  LuScissors, LuCalendar, LuClock, LuMapPin,
+  LuScissors, LuCalendar, LuClock, LuMapPin, LuUser,
   LuStickyNote, LuCircleCheck, LuChevronLeft, LuChevronRight,
   LuTriangleAlert, LuTag, LuCreditCard, LuBanknote, LuPrinter,
 } from 'react-icons/lu'
@@ -39,7 +39,7 @@ function StepIndicator({ step, total }) {
           </div>
           {i < total - 1 && (
             <div style={{
-              width: 48, height: 4,
+              width: 32, height: 4,
               background: i + 1 < step ? 'var(--green)' : '#e0d8cc',
               border: '1px solid var(--ink)',
               transition: 'background .3s',
@@ -65,9 +65,9 @@ export default function NuevaReserva() {
   const preSelected = location.state?.servicio ?? ''
 
   const [step, setStep]     = useState(preSelected ? 2 : 1)
-  const [form, setForm]     = useState({ servicio: null, fecha: '', horario: '', sucursal: '', notas: '' })
+  const [form, setForm]     = useState({ servicio: null, fecha: '', horario: '', sucursal: '', asiento: null, notas: '' })
   const [loading, setLoading]   = useState(false)
-  const [reservaCreada, setReservaCreada] = useState(null)
+  const [reservaCreada, setReservaCreada] = useState(null) // { idReserva, codigoReserva }
 
   // Payment state
   const [metodoPago, setMetodoPago]   = useState('Simulado')
@@ -90,10 +90,15 @@ export default function NuevaReserva() {
     }),
   })
 
+  const { data: asientos = [] } = useQuery({
+    queryKey: ['asientos-disponibles'],
+    queryFn: () => api.get('/asientos').then(r => (r.data.data ?? []).filter(a => a.estado === 'Disponible')),
+  })
+
   const selServicio = (s) => { setForm(f => ({ ...f, servicio: s })); setStep(2) }
 
   const handleConfirm = async () => {
-    if (!form.servicio || !form.fecha || !form.horario) {
+    if (!form.servicio || !form.fecha || !form.horario || !form.asiento) {
       toast.error('Completa todos los campos'); return
     }
     setLoading(true)
@@ -102,12 +107,13 @@ export default function NuevaReserva() {
         fecha:         form.fecha,
         horaInicio:    form.horario,
         idServicio:    form.servicio.idServicio,
+        idAsiento:     form.asiento.idAsiento,
         local:         form.sucursal,
         observaciones: form.notas,
       })
-      const idReserva = res.data.data
-      setReservaCreada(idReserva)
-      setStep(4)
+      const data = res.data.data // { idReserva, codigoReserva }
+      setReservaCreada(data)
+      setStep(5)
     } catch (err) {
       toast.error(err.response?.data?.message || 'Error al crear la reserva')
     } finally { setLoading(false) }
@@ -138,23 +144,23 @@ export default function NuevaReserva() {
   const precioFinal = +(precioBase - descuentoMonto).toFixed(2)
 
   const handlePagar = async () => {
-    if (!reservaCreada) { toast.error('Error: no hay reserva creada'); return }
+    if (!reservaCreada?.idReserva) { toast.error('Error: no hay reserva creada'); return }
     setProcesandoPago(true)
     try {
       const res = await pagosApi.procesar({
-        idReserva:       reservaCreada,
+        idReserva:       reservaCreada.idReserva,
         metodoPago,
         codigoPromocion: codigo.trim() || null,
       })
       const data = res.data.data
       setBoleta(data)
-      toast.success('¡Pago procesado exitosamente! 🎉', { duration: 4000 })
+      toast.success(metodoPago === 'Efectivo' ? '¡Reserva confirmada! Paga en el salón' : '¡Pago exitoso! 🎉', { duration: 4000 })
     } catch (err) {
       toast.error(err.response?.data?.message || 'Error al procesar el pago')
     } finally { setProcesandoPago(false) }
   }
 
-  const stepTitles = ['Elige tu servicio', 'Fecha y sede', 'Confirmar reserva', 'Pago']
+  const stepTitles = ['Elige tu servicio', 'Fecha y sede', 'Elige tu asiento', 'Confirmar reserva', 'Pago']
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--paper)', paddingTop: 100, paddingBottom: 60, fontFamily: "'Nunito',sans-serif" }}>
@@ -169,11 +175,11 @@ export default function NuevaReserva() {
             Nueva Reserva 🦁
           </h1>
           <p style={{ color: 'rgba(255,255,255,.75)', fontSize: 14, margin: 0 }}>
-            {stepTitles[step - 1]} · Paso {step} de 4
+            {stepTitles[step - 1]} · Paso {step} de 5
           </p>
         </div>
 
-        <StepIndicator step={step} total={4} />
+        <StepIndicator step={step} total={5} />
 
         {/* ── STEP 1 : Servicio ── */}
         {step === 1 && (
@@ -293,8 +299,57 @@ export default function NuevaReserva() {
           </div>
         )}
 
-        {/* ── STEP 3 : Confirmar ── */}
+        {/* ── STEP 3 : Selección de asiento ── */}
         {step === 3 && (
+          <div className="card-chunky" style={{ padding: 32 }}>
+            <h2 style={{ fontFamily: "'Fredoka One',cursive", fontSize: 22, color: 'var(--ink)', marginBottom: 6 }}>
+              Elige tu asiento
+            </h2>
+            <p style={{ color: '#888', fontSize: 13, marginBottom: 24 }}>Selecciona la silla donde tu peque disfrutará del servicio</p>
+
+            {asientos.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '32px 0', color: '#aaa' }}>
+                <p style={{ fontSize: 40, marginBottom: 8 }}>🪑</p>
+                <p style={{ fontFamily: "'Poppins',sans-serif" }}>No hay asientos disponibles en este momento</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                {asientos.map(a => {
+                  const sel = form.asiento?.idAsiento === a.idAsiento
+                  return (
+                    <button key={a.idAsiento} onClick={() => setForm(f => ({ ...f, asiento: a }))} style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                      padding: '20px 14px',
+                      background: sel ? 'var(--yellow)' : '#fff',
+                      border: `4px solid ${sel ? 'var(--pink)' : 'var(--ink)'}`,
+                      borderRadius: 20, boxShadow: sel ? '6px 6px 0 var(--ink)' : '4px 4px 0 var(--ink)',
+                      cursor: 'pointer', transition: 'all .18s', fontFamily: 'inherit',
+                      transform: sel ? 'translate(-2px,-2px)' : 'translate(0,0)',
+                    }}>
+                      <span style={{ fontSize: 32 }}>🪑</span>
+                      <span style={{ fontWeight: 800, fontSize: 13, color: 'var(--ink)', textAlign: 'center', lineHeight: 1.3 }}>{a.nombre}</span>
+                      <span style={{ fontSize: 11, color: sel ? 'var(--ink)' : '#888', fontFamily: "'Poppins',sans-serif" }}>{a.tipo}</span>
+                      {sel && <LuCircleCheck size={16} color="var(--ink)" />}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
+              <button onClick={() => setStep(2)} className="btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <LuChevronLeft size={18} /> Atrás
+              </button>
+              <button disabled={!form.asiento} onClick={() => setStep(4)}
+                className="btn btn-g" style={{ flex: 2, opacity: !form.asiento ? 0.45 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                Siguiente <LuChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 4 : Confirmar ── */}
+        {step === 4 && (
           <div className="card-chunky" style={{ padding: 32, borderColor: 'var(--yellow)' }}>
             <h2 style={{ fontFamily: "'Fredoka One',cursive", fontSize: 22, color: 'var(--ink)', marginBottom: 6 }}>Confirma tu reserva</h2>
             <p style={{ color: '#888', fontSize: 13, marginBottom: 24 }}>Revisa los detalles antes de confirmar</p>
@@ -306,6 +361,7 @@ export default function NuevaReserva() {
                 [<LuCalendar size={16} />, 'Fecha',    form.fecha],
                 [<LuClock    size={16} />, 'Hora',     form.horario],
                 [<LuMapPin   size={16} />, 'Sede',     form.sucursal],
+                [<LuUser     size={16} />, 'Asiento',  form.asiento?.nombre],
               ].map(([ico, l, v]) => (
                 <div key={l} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(27,122,62,.12)' }}>
                   <span style={{ color: '#666', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -330,12 +386,12 @@ export default function NuevaReserva() {
             <div style={{ background: '#fff8e1', border: '3px solid var(--yellow)', borderRadius: 14, padding: '12px 16px', marginBottom: 24, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
               <LuTriangleAlert size={18} color="#b38600" style={{ flexShrink: 0, marginTop: 1 }} />
               <p style={{ fontSize: 12, color: '#7c5607', margin: 0, lineHeight: 1.6 }}>
-                Al confirmar pasarás al paso de pago. La reserva quedará pendiente hasta completar el pago.
+                Al confirmar se creará tu reserva y podrás elegir el método de pago.
               </p>
             </div>
 
             <div style={{ display: 'flex', gap: 12 }}>
-              <button onClick={() => setStep(2)} className="btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <button onClick={() => setStep(3)} className="btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 <LuChevronLeft size={18} /> Atrás
               </button>
               <button onClick={handleConfirm} disabled={loading} className="btn btn-g"
@@ -346,8 +402,8 @@ export default function NuevaReserva() {
           </div>
         )}
 
-        {/* ── STEP 4 : Pago ── */}
-        {step === 4 && !boleta && (
+        {/* ── STEP 5 : Pago ── */}
+        {step === 5 && !boleta && (
           <div className="card-chunky" style={{ padding: 32 }}>
             <h2 style={{ fontFamily: "'Fredoka One',cursive", fontSize: 22, color: 'var(--ink)', marginBottom: 6 }}>
               💳 Pago del servicio
@@ -404,7 +460,7 @@ export default function NuevaReserva() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 {[
                   { key: 'Simulado', label: 'Tarjeta Simulada', icon: <LuCreditCard size={22} />, color: '#3b82f6' },
-                  { key: 'Efectivo', label: 'Efectivo',         icon: <LuBanknote   size={22} />, color: '#2E7D32' },
+                  { key: 'Efectivo', label: 'Efectivo en salón', icon: <LuBanknote   size={22} />, color: '#2E7D32' },
                 ].map(m => (
                   <button key={m.key} onClick={() => setMetodoPago(m.key)} style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
@@ -421,7 +477,7 @@ export default function NuevaReserva() {
               </div>
             </div>
 
-            {/* Info tarjeta simulada */}
+            {/* Info método simulado */}
             {metodoPago === 'Simulado' && (
               <div style={{ background: '#eff6ff', border: '2px solid #93c5fd', borderRadius: 14, padding: '16px 18px', marginBottom: 20 }}>
                 <p style={{ fontFamily: "'Fredoka One',cursive", color: '#1d4ed8', fontSize: 15, marginBottom: 12 }}>💳 Datos de tarjeta (simulado)</p>
@@ -445,15 +501,76 @@ export default function NuevaReserva() {
               </div>
             )}
 
+            {/* Info efectivo */}
+            {metodoPago === 'Efectivo' && (
+              <div style={{ background: '#e8f5e9', border: '2px solid var(--green)', borderRadius: 14, padding: '14px 18px', marginBottom: 20 }}>
+                <p style={{ fontFamily: "'Fredoka One',cursive", color: '#1b5e20', fontSize: 15, margin: '0 0 6px' }}>💰 Pago en efectivo</p>
+                <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 12, color: '#2E7D32', margin: 0 }}>
+                  Recibirás un código único. Preséntalo al empleado al llegar al salón para confirmar tu pago.
+                </p>
+              </div>
+            )}
+
             <button onClick={handlePagar} disabled={procesandoPago} className="btn btn-g"
               style={{ width: '100%', fontSize: 17, padding: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, opacity: procesandoPago ? 0.7 : 1 }}>
-              {procesandoPago ? 'Procesando pago...' : <>🦁 Confirmar y Pagar S/ {precioFinal.toFixed(2)}</>}
+              {procesandoPago ? 'Procesando...' : metodoPago === 'Efectivo'
+                ? <>🦁 Confirmar reserva (pago en salón)</>
+                : <>🦁 Confirmar y Pagar S/ {precioFinal.toFixed(2)}</>
+              }
             </button>
           </div>
         )}
 
-        {/* ── BOLETA ── */}
-        {boleta && (
+        {/* ── BOLETA / CONFIRMACIÓN ── */}
+        {boleta && boleta.metodoPago === 'Efectivo' ? (
+          /* Pago efectivo pendiente */
+          <div className="card-chunky" style={{ padding: 32, borderColor: 'var(--yellow)' }}>
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <div style={{ fontSize: 52, marginBottom: 8 }}>💰</div>
+              <h2 style={{ fontFamily: "'Fredoka One',cursive", fontSize: 26, color: '#b38600', margin: 0 }}>¡Reserva creada!</h2>
+              <p style={{ color: '#666', fontSize: 14, marginTop: 6 }}>Paga en efectivo al llegar al salón</p>
+            </div>
+
+            {/* Código de reserva */}
+            <div style={{ background: '#fff8e1', border: '4px solid var(--yellow)', borderRadius: 20, boxShadow: '6px 6px 0 var(--ink)', padding: '24px 32px', marginBottom: 24, textAlign: 'center' }}>
+              <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 11, color: '#888', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8, marginTop: 0 }}>
+                Tu código de reserva
+              </p>
+              <p style={{ fontFamily: "'Fredoka One',cursive", fontSize: 34, color: 'var(--ink)', margin: '0 0 8px', letterSpacing: 4 }}>
+                {boleta.codigoReserva ?? reservaCreada?.codigoReserva}
+              </p>
+              <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 12, color: '#888', margin: 0 }}>
+                Muestra este código al empleado para confirmar tu pago
+              </p>
+            </div>
+
+            {/* Resumen */}
+            <div style={{ background: '#f9f9f9', border: '2px dashed var(--ink)', borderRadius: 16, padding: 20, marginBottom: 24 }}>
+              {[
+                ['Servicio',      boleta.servicio],
+                ['Fecha',         boleta.fechaReserva],
+                ['Hora',          boleta.hora],
+                ['Local',         boleta.local],
+                ['Total a pagar', `S/ ${Number(boleta.montoTotal ?? 0).toFixed(2)}`],
+              ].filter(([,v]) => v).map(([l, v]) => (
+                <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #eee' }}>
+                  <span style={{ fontSize: 13, color: '#666', fontFamily: "'Poppins',sans-serif" }}>{l}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', fontFamily: "'Poppins',sans-serif" }}>{v}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={() => window.print()} className="btn btn-secondary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <LuPrinter size={16} /> Imprimir
+              </button>
+              <button onClick={() => navigate('/mi-cuenta/reservas')} className="btn btn-g" style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <LuCircleCheck size={18} /> Ver mis reservas
+              </button>
+            </div>
+          </div>
+        ) : boleta ? (
+          /* Pago exitoso (tarjeta/simulado) */
           <div className="card-chunky" style={{ padding: 32, borderColor: 'var(--green)' }}>
             <div style={{ textAlign: 'center', marginBottom: 24 }}>
               <div style={{ fontSize: 52, marginBottom: 8 }}>🎉</div>
@@ -461,7 +578,6 @@ export default function NuevaReserva() {
               <p style={{ color: '#666', fontSize: 14, marginTop: 6 }}>Tu reserva ha sido confirmada</p>
             </div>
 
-            {/* Boleta box */}
             <div style={{ background: '#f9f9f9', border: '3px dashed var(--ink)', borderRadius: 16, padding: 24, marginBottom: 24 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <span style={{ fontFamily: "'Fredoka One',cursive", fontSize: 18, color: 'var(--ink)' }}>🧾 BOLETA</span>
@@ -494,15 +610,15 @@ export default function NuevaReserva() {
             </div>
 
             <div style={{ display: 'flex', gap: 12 }}>
-              <button onClick={() => window.print()} className="btn btn-secondary" style={{ flex: 1, gap: 6 }}>
+              <button onClick={() => window.print()} className="btn btn-secondary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 <LuPrinter size={16} /> Imprimir
               </button>
-              <button onClick={() => navigate('/mi-cuenta/reservas')} className="btn btn-g" style={{ flex: 2, gap: 8 }}>
+              <button onClick={() => navigate('/mi-cuenta/reservas')} className="btn btn-g" style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                 <LuCircleCheck size={18} /> Ver mis reservas
               </button>
             </div>
           </div>
-        )}
+        ) : null}
 
       </div>
     </div>

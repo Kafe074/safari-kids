@@ -1,12 +1,14 @@
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { reservasApi } from '../../api/reservas'
+import { pagosApi } from '../../api/pagos'
 import { empleadosApi } from '../../api/empleados'
 import { useAuth } from '../../context/AuthContext'
 import StatCard from '../../components/common/StatCard'
 import toast from 'react-hot-toast'
 import {
   LuCalendar, LuClock, LuCircleCheck, LuChartBar, LuX,
-  LuScissors, LuUser, LuMapPin,
+  LuScissors, LuUser, LuMapPin, LuBanknote, LuSearch,
 } from 'react-icons/lu'
 
 const BADGE_STYLE = {
@@ -55,6 +57,40 @@ export default function EmpleadoHome() {
   const nombre     = user?.nombreCompleto?.split(' ')[0] ?? 'Estilista'
   const fechaLarga = new Date().toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' })
   const sucursal   = perfil?.sucursal ?? null
+
+  // Estado para validar pago en efectivo
+  const [codigoInput, setCodigoInput]     = useState('')
+  const [buscando, setBuscando]           = useState(false)
+  const [reservaEncontrada, setReservaEncontrada] = useState(null)
+  const [validando, setValidando]         = useState(false)
+
+  const buscarPorCodigo = async () => {
+    if (!codigoInput.trim()) return
+    setBuscando(true)
+    try {
+      const res = await reservasApi.porCodigo(codigoInput.trim().toUpperCase())
+      const r = res.data.data
+      if (r.estado === 'Cancelado') { toast.error('Esta reserva fue cancelada'); setReservaEncontrada(null); return }
+      setReservaEncontrada(r)
+    } catch (err) {
+      toast.error(err.response?.status === 404 ? 'Código no encontrado' : 'Error al buscar')
+      setReservaEncontrada(null)
+    } finally { setBuscando(false) }
+  }
+
+  const validarPago = async () => {
+    if (!reservaEncontrada) return
+    setValidando(true)
+    try {
+      await pagosApi.validarEfectivo(codigoInput.trim().toUpperCase())
+      toast.success('¡Pago validado! Reserva confirmada')
+      qc.invalidateQueries(['mis-asignadas'])
+      setReservaEncontrada(null)
+      setCodigoInput('')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Error al validar el pago')
+    } finally { setValidando(false) }
+  }
 
   return (
     <div style={{ background: 'var(--paper)', minHeight: '100vh', padding: 24 }}>
@@ -126,6 +162,61 @@ export default function EmpleadoHome() {
         <StatCard icon={<LuClock      size={26} color="#E89E0D" />} label="Por atender"    value={pendientesHoy.length} bg="#FFF8E1" />
         <StatCard icon={<LuCircleCheck size={26} color="#0EA5E9" />} label="Atendidos hoy" value={atendidosHoy.length}  bg="#E0F2FE" />
         <StatCard icon={<LuChartBar   size={26} color="#A855F7" />} label="Próximas citas" value={proximas.length}      bg="#F3E8FF" />
+      </div>
+
+      {/* ── Validar pago en efectivo ── */}
+      <div className="card-chunky" style={{ marginBottom: 28, overflow: 'hidden' }}>
+        <div style={{ padding: '14px 20px', background: 'linear-gradient(135deg, #b45309, #d97706)', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <LuBanknote size={20} color="#fff" />
+          <span style={{ fontFamily: "'Fredoka One', cursive", fontSize: 18, color: '#fff' }}>Validar Pago en Efectivo</span>
+        </div>
+        <div style={{ padding: '20px 24px' }}>
+          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 13, color: '#666', marginBottom: 16, marginTop: 0 }}>
+            Ingresa el código de reserva del cliente para confirmar su pago en efectivo.
+          </p>
+          <div style={{ display: 'flex', gap: 10, marginBottom: reservaEncontrada ? 16 : 0 }}>
+            <input
+              value={codigoInput}
+              onChange={e => { setCodigoInput(e.target.value.toUpperCase()); setReservaEncontrada(null) }}
+              placeholder="Ej: SKR-A1B2C3D4"
+              style={{ flex: 1, padding: '10px 14px', border: '3px solid var(--ink)', borderRadius: 12, fontFamily: 'inherit', fontSize: 14, outline: 'none' }}
+              onKeyDown={e => e.key === 'Enter' && buscarPorCodigo()}
+            />
+            <button className="btn" onClick={buscarPorCodigo} disabled={buscando || !codigoInput.trim()}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff8e1', borderColor: '#b45309', color: '#b45309' }}>
+              <LuSearch size={16} /> {buscando ? '...' : 'Buscar'}
+            </button>
+          </div>
+
+          {reservaEncontrada && (
+            <div style={{ background: '#fff8e1', border: '3px solid #d97706', borderRadius: 14, padding: '16px 20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                <div>
+                  <p style={{ fontWeight: 900, fontSize: 15, margin: 0, color: 'var(--ink)' }}>
+                    {reservaEncontrada.cliente?.usuario?.nombres} {reservaEncontrada.cliente?.usuario?.apellidos}
+                  </p>
+                  <p style={{ fontSize: 12, color: '#888', margin: '4px 0 0' }}>
+                    {reservaEncontrada.fechaReserva} · {reservaEncontrada.horario?.horaInicio?.substring(0,5)}
+                    {reservaEncontrada.local && ` · ${reservaEncontrada.local.split('–')[0].trim()}`}
+                  </p>
+                </div>
+                <span style={{ background: reservaEncontrada.estado === 'Confirmado' ? '#1B7A3E' : '#FFC42E', color: reservaEncontrada.estado === 'Confirmado' ? '#fff' : '#2B1B00', border: '2px solid var(--ink)', borderRadius: 999, padding: '3px 10px', fontSize: 11, fontWeight: 800 }}>
+                  {reservaEncontrada.estado === 'Confirmado' ? 'Ya confirmada' : 'Pendiente de pago'}
+                </span>
+              </div>
+              {reservaEncontrada.estado !== 'Confirmado' ? (
+                <button className="btn btn-g" onClick={validarPago} disabled={validando}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  <LuCircleCheck size={16} /> {validando ? 'Validando...' : 'Confirmar pago en efectivo'}
+                </button>
+              ) : (
+                <p style={{ textAlign: 'center', color: '#1B7A3E', fontWeight: 800, fontSize: 13, margin: 0 }}>
+                  ✓ Este pago ya fue validado anteriormente
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Two-column grid ── */}
