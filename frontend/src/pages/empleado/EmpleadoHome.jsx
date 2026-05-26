@@ -5,11 +5,39 @@ import { pagosApi } from '../../api/pagos'
 import { empleadosApi } from '../../api/empleados'
 import { useAuth } from '../../context/AuthContext'
 import StatCard from '../../components/common/StatCard'
+import OnboardingTour from '../../components/common/OnboardingTour'
 import toast from 'react-hot-toast'
 import {
   LuCalendar, LuClock, LuCircleCheck, LuChartBar, LuX,
   LuScissors, LuUser, LuMapPin, LuBanknote, LuSearch,
 } from 'react-icons/lu'
+
+const EMPLEADO_TOUR = [
+  {
+    emoji: '✂️',
+    title: '¡Bienvenido, estilista!',
+    description: 'Este es tu panel de trabajo. Aquí verás todas tus citas asignadas, podrás marcarlas como atendidas y gestionar los pagos en efectivo. Vamos a conocerlo juntos.',
+    accent: '#1B7A3E',
+  },
+  {
+    emoji: '📊',
+    title: 'Tus estadísticas del día',
+    description: 'Las tarjetas superiores te muestran cuántas citas tienes hoy, cuántas están pendientes de atender, cuántas ya completaste y tus citas próximas.',
+    accent: '#0EA5E9',
+  },
+  {
+    emoji: '💵',
+    title: 'Validar pago en efectivo',
+    description: 'Cuando un cliente pague en efectivo, ingresa su código de reserva (ej: SKR-A1B2C3D4) en el buscador para confirmar el pago y marcar la reserva como atendida.',
+    accent: '#b45309',
+  },
+  {
+    emoji: '📋',
+    title: 'Tu agenda de citas',
+    description: 'En "Clientes de hoy" ves la agenda del día. Usa los botones de cada cita para marcarla como atendida o cancelarla. "Próximas citas" muestra los días siguientes.',
+    accent: '#7E22CE',
+  },
+]
 
 const BADGE_STYLE = {
   Pendiente:  { background: '#FFC42E', color: '#2B1B00', border: '3px solid #2B1B00', label: 'Pendiente' },
@@ -57,6 +85,7 @@ export default function EmpleadoHome() {
   const nombre     = user?.nombreCompleto?.split(' ')[0] ?? 'Estilista'
   const fechaLarga = new Date().toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' })
   const sucursal   = perfil?.sucursal ?? null
+  const tourKey    = `safari_tour_empleado_${user?.correo ?? 'anon'}`
 
   // Estado para validar pago en efectivo
   const [codigoInput, setCodigoInput]     = useState('')
@@ -94,6 +123,7 @@ export default function EmpleadoHome() {
 
   return (
     <div style={{ background: 'var(--paper)', minHeight: '100vh', padding: 24 }}>
+      <OnboardingTour steps={EMPLEADO_TOUR} storageKey={tourKey} />
 
       {/* ── Welcome hero ── */}
       <div className="card-chunky" style={{

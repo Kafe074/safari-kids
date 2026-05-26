@@ -3,6 +3,34 @@ import { Link } from 'react-router-dom'
 import {
   LuCalendar, LuClock, LuShoppingCart, LuPackage, LuArrowRight, LuUser,
 } from 'react-icons/lu'
+import OnboardingTour from '../../components/common/OnboardingTour'
+
+const CLIENTE_TOUR = [
+  {
+    emoji: '👋',
+    title: '¡Bienvenido a Safari Kids!',
+    description: 'Este es tu espacio personal. Desde aquí puedes gestionar tus reservas, ver tu historial de compras y explorar la tienda. Te guiamos en unos pasos rápidos.',
+    accent: '#1B7A3E',
+  },
+  {
+    emoji: '📅',
+    title: 'Agenda una cita',
+    description: 'Pulsa "Nueva Reserva" para elegir el servicio, la sucursal, la fecha y el horario que mejor te convenga. ¡Es muy fácil!',
+    accent: '#1B7A3E',
+  },
+  {
+    emoji: '🕐',
+    title: 'Revisa tus reservas',
+    description: 'En "Mis Reservas" encontrarás todas tus citas: las próximas y el historial completo. Puedes cancelar una cita desde ahí si lo necesitas.',
+    accent: '#38BDF8',
+  },
+  {
+    emoji: '🛍️',
+    title: 'Tienda y compras',
+    description: 'Visita la tienda para comprar productos directamente. En "Mis Compras" verás todo tu historial de pedidos. ¡Ya estás listo para empezar!',
+    accent: '#A855F7',
+  },
+]
 
 const TILES = [
   {
@@ -47,7 +75,7 @@ export default function MiCuenta() {
   const { user } = useAuth()
   const nombre = user?.nombreCompleto || 'Cliente'
   const firstName = nombre.split(' ')[0]
-
+  const tourKey = `safari_tour_cliente_${user?.correo ?? 'anon'}`
 
   return (
     <div
@@ -58,6 +86,7 @@ export default function MiCuenta() {
         fontFamily: "'Nunito', 'Segoe UI', sans-serif",
       }}
     >
+      <OnboardingTour steps={CLIENTE_TOUR} storageKey={tourKey} />
       <div style={{ maxWidth: 820, margin: '0 auto' }}>
 
         {/* ── Hero card ── */}
