@@ -100,7 +100,11 @@
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('OK Lucía:', d.get\\('data',{}\\).get\\('sucursal'\\)\\)\")",
       "Bash(git pull *)",
       "Bash(git stash *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(python3 -c \"import docx\")",
+      "Bash(pip install *)",
+      "Bash(python3 *)",
+      "Bash(identify /home/kafe/Documentos/safari-kids_3/DER_Safari_Kids.png)"
     ],
     "additionalDirectories": [
       "/tmp",
