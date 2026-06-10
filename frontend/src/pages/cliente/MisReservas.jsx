@@ -194,7 +194,7 @@ export default function MisReservas() {
             </Link>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {data.map(r => (
               <ReservaCard
                 key={r.idReserva}

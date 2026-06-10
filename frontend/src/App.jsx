@@ -31,6 +31,7 @@ import ReportesPage    from './pages/reportes/ReportesPage'
 import AdminPage       from './pages/admin/AdminPage'
 import EmpleadoHome    from './pages/empleado/EmpleadoHome'
 import EmpleadoReservas from './pages/empleado/EmpleadoReservas'
+import EmpleadoInstrumentos from './pages/empleado/EmpleadoInstrumentos'
 import TiendaPage      from './pages/tienda/TiendaPage'
 import CarritoPage     from './pages/tienda/CarritoPage'
 
@@ -96,6 +97,7 @@ export default function App() {
             <Route element={<MainLayout />}>
               <Route path="/empleado"  element={<EmpleadoHome />} />
               <Route path="/mis-citas" element={<EmpleadoReservas />} />
+              <Route path="/mis-instrumentos" element={<EmpleadoInstrumentos />} />
             </Route>
           </Route>
 

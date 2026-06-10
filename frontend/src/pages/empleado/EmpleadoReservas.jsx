@@ -110,11 +110,10 @@ export default function EmpleadoReservas() {
       <div className="card-chunky" style={{ overflow: 'hidden' }}>
 
         {isLoading ? (
-          <div style={{ padding: 56, textAlign: 'center' }}>
-            <LuClock size={44} color="#ccc" style={{ marginBottom: 14 }} />
-            <p style={{ color: '#aaa', fontFamily: "'Caveat',cursive", fontSize: 20 }}>
-              Cargando reservas...
-            </p>
+          <div style={{ padding: 20 }}>
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="skel" style={{ height: 64, marginBottom: 12, animationDelay: `${i * 0.1}s` }} />
+            ))}
           </div>
         ) : sorted.length === 0 ? (
           <div style={{ padding: 64, textAlign: 'center' }}>

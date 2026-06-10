@@ -25,10 +25,12 @@ public class DataInitializer implements CommandLineRunner {
     private final ProductoRepository productoRepo;
     private final InventarioRepository inventarioRepo;
     private final ProveedorRepository proveedorRepo;
+    private final InsumoRepository insumoRepo;
     private final PasswordEncoder encoder;
 
     @Override
     public void run(String... args) {
+        seedInsumos(); // idempotente — corre aunque la BD ya esté sembrada
         if (rolRepo.count() > 0) return; // already seeded
 
         // ── Roles ─────────────────────────────────────────────────────────
@@ -133,5 +135,27 @@ public class DataInitializer implements CommandLineRunner {
         proveedorRepo.save(Proveedor.builder().nombre("Cosméticos Andinos EIRL").telefono("064-234567").direccion("Jr. Loreto 234, Huancayo").correo("info@cosmetichub.com").build());
 
         System.out.println("✅ Safari Kids - Datos iniciales cargados correctamente");
+    }
+
+    /** Instrumentos básicos del salón para las solicitudes de empleados. */
+    private void seedInsumos() {
+        if (insumoRepo.count() > 0) return;
+        Object[][] insumos = {
+            {"Tijeras profesionales", "unidad", 12},
+            {"Máquina de corte",      "unidad", 8},
+            {"Peine de corte",        "unidad", 20},
+            {"Cepillo redondo",       "unidad", 15},
+            {"Capa infantil",         "unidad", 18},
+            {"Pulverizador de agua",  "unidad", 10},
+            {"Toalla pequeña",        "unidad", 30},
+            {"Secadora de cabello",   "unidad", 6},
+            {"Clips separadores",     "set",    14},
+            {"Navaja perfiladora",    "unidad", 9},
+        };
+        for (Object[] i : insumos) {
+            insumoRepo.save(Insumo.builder()
+                .nombre((String) i[0]).unidadMedida((String) i[1]).stock((Integer) i[2]).build());
+        }
+        System.out.println("✅ Safari Kids - Insumos básicos sembrados");
     }
 }

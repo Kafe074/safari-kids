@@ -194,25 +194,41 @@ export default function TiendaPage() {
 
         {/* States */}
         {isLoading ? (
-          <div style={{ textAlign: 'center', padding: 60 }}>
-            <div className="card-chunky" style={{ display: 'inline-block', padding: '40px 60px', background: '#fff' }}>
-              <LuPackage size={56} color="var(--green)" style={{ marginBottom: 16 }} />
-              <p style={{ fontFamily: "'Fredoka One', cursive", fontSize: 22, color: 'var(--ink)', margin: 0 }}>
-                Cargando productos...
-              </p>
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 24 }}>
+            {[...Array(8)].map((_, i) => (
+              <div key={i} style={{ background: '#fff', borderRadius: 28, border: '4px solid #ECF3EC', overflow: 'hidden' }}>
+                <div className="skel" style={{ height: 140, borderRadius: 0, animationDelay: `${i * 0.08}s` }} />
+                <div style={{ padding: '18px 20px' }}>
+                  <div className="skel" style={{ height: 12, width: '40%', marginBottom: 10, animationDelay: `${i * 0.08}s` }} />
+                  <div className="skel" style={{ height: 18, width: '80%', marginBottom: 14, animationDelay: `${i * 0.08}s` }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div className="skel" style={{ height: 24, width: 70, animationDelay: `${i * 0.08}s` }} />
+                    <div className="skel" style={{ height: 32, width: 90, borderRadius: 999, animationDelay: `${i * 0.08}s` }} />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 60 }}>
-            <div className="card-chunky" style={{ display: 'inline-block', padding: '40px 60px', background: '#fff' }}>
-              <LuPackage size={56} color="var(--orange)" style={{ marginBottom: 16 }} />
-              <p style={{ fontFamily: "'Fredoka One', cursive", fontSize: 22, color: 'var(--ink)', margin: 0 }}>
+            <div className="card-chunky anim-pop-in" style={{ display: 'inline-block', padding: '40px 60px', background: '#fff' }}>
+              <LuPackage size={56} color="var(--orange)" style={{ marginBottom: 16 }} className="float" />
+              <p style={{ fontFamily: "'Fredoka One', cursive", fontSize: 22, color: 'var(--ink)', margin: '0 0 8px' }}>
                 No se encontraron productos
               </p>
+              <p style={{ fontSize: 14, color: '#888', margin: '0 0 18px' }}>
+                {search ? `Sin resultados para "${search}"` : 'Prueba con otra categoría'}
+              </p>
+              {(search || catActiva !== 'Todos') && (
+                <button className="btn btn-y" style={{ padding: '10px 22px', fontSize: 14 }}
+                  onClick={() => { setSearch(''); setCatActiva('Todos') }}>
+                  Ver todos los productos
+                </button>
+              )}
             </div>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 24 }}>
+          <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 24 }}>
             {filtered.map(p => {
               const topBg  = CAT_BG[p.categoria?.nombre] || '#f0fdf4'
               const icon   = CAT_ICONS[p.categoria?.nombre] || '📦'
@@ -224,16 +240,7 @@ export default function TiendaPage() {
                     background: '#fff',
                     display: 'flex', flexDirection: 'column',
                     overflow: 'hidden',
-                    transition: 'transform .15s, box-shadow .15s',
                     cursor: 'default',
-                  }}
-                  onMouseOver={e => {
-                    e.currentTarget.style.transform  = 'translate(-3px,-3px)'
-                    e.currentTarget.style.boxShadow  = '11px 11px 0 var(--ink)'
-                  }}
-                  onMouseOut={e => {
-                    e.currentTarget.style.transform  = 'translate(0,0)'
-                    e.currentTarget.style.boxShadow  = '8px 8px 0 var(--ink)'
                   }}
                 >
                   {/* colored top */}

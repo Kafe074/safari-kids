@@ -136,7 +136,7 @@ export default function ServiciosPublic() {
                 <p style={{ color:'#aaa', marginTop:8 }}>Prueba con otra búsqueda o categoría</p>
               </div>
             ) : (
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:28 }}>
+              <div className="stagger" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:28 }}>
                 {filtered.map((s, i) => {
                   const cfg = CAT_COLORS[s.cat] || CAT_COLORS.default
                   const rotate = [-2,1,-1,2,0,-1,1,-2][i % 8]

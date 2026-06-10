@@ -34,10 +34,13 @@ export default function Dashboard() {
     { to: '/compras',    icon: <LuShoppingBag size={24} />, label: 'Ver Compras',  color: '#FFC42E' },
   ]
 
+  const hora = new Date().getHours()
+  const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches'
+
   return (
     <div>
       {/* Welcome banner */}
-      <div style={{
+      <div className="fade-page" style={{
         background: 'linear-gradient(135deg,#1b5e20,#1B7A3E)',
         border: '4px solid #0F5527',
         borderRadius: 24,
@@ -49,27 +52,37 @@ export default function Dashboard() {
         justifyContent: 'space-between',
         flexWrap: 'wrap',
         gap: 16,
+        position: 'relative',
+        overflow: 'hidden',
       }}>
-        <div>
-          <h2 style={{ color: '#FFC42E', fontSize: 12, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6, margin: '0 0 6px' }}>
+        {/* Decoración de fondo */}
+        <span aria-hidden style={{ position: 'absolute', right: 110, top: -18, fontSize: 90, opacity: .12, transform: 'rotate(15deg)' }} className="wiggle-s">🌿</span>
+        <span aria-hidden style={{ position: 'absolute', right: 8, bottom: -26, fontSize: 100, opacity: .12 }} className="float">🦁</span>
+        <div style={{ position: 'relative' }}>
+          <h2 style={{ color: '#FFC42E', fontSize: 12, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', margin: '0 0 6px' }}>
             Panel Administrativo
           </h2>
           <h1 style={{ fontFamily: "'Fredoka One',cursive", color: '#fff', fontSize: 28, margin: '0 0 4px', lineHeight: 1.2 }}>
-            ¡Hola, {user?.nombreCompleto?.split(' ')[0]}! 🦁
+            ¡{saludo}, {user?.nombreCompleto?.split(' ')[0]}! 🦁
           </h1>
           <p style={{ color: 'rgba(255,255,255,.7)', fontSize: 13, margin: 0 }}>
             Safari Kids – Sistema de Gestión
           </p>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <p style={{ color: 'rgba(255,255,255,.65)', fontSize: 12, margin: 0 }}>
-            {new Date().toLocaleDateString('es-PE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        <div style={{ textAlign: 'right', position: 'relative' }}>
+          <p style={{
+            color: '#FFF8E1', fontSize: 12, margin: 0, fontWeight: 700,
+            background: 'rgba(255,255,255,.12)', padding: '8px 14px',
+            borderRadius: 999, border: '1px solid rgba(255,255,255,.2)',
+            textTransform: 'capitalize',
+          }}>
+            📅 {new Date().toLocaleDateString('es-PE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
       </div>
 
       {/* Stats grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 16, marginBottom: 24 }}>
+      <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 16, marginBottom: 24 }}>
         {cards.map(c => <StatCard key={c.label} {...c} />)}
       </div>
 
@@ -78,7 +91,7 @@ export default function Dashboard() {
         <h3 style={{ fontFamily: "'Fredoka One',cursive", fontWeight: 400, color: 'var(--ink)', marginBottom: 16, fontSize: 18 }}>
           Accesos Rápidos
         </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12 }}>
+        <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12 }}>
           {accesos.map(a => (
             <Link key={a.to} to={a.to} style={{ textDecoration: 'none' }}>
               <div
@@ -88,17 +101,8 @@ export default function Dashboard() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 10,
-                  transition: 'all .15s',
                   cursor: 'pointer',
                   color: a.color,
-                }}
-                onMouseOver={e => {
-                  e.currentTarget.style.transform = 'translate(-2px,-2px)'
-                  e.currentTarget.style.boxShadow = '10px 10px 0 var(--ink)'
-                }}
-                onMouseOut={e => {
-                  e.currentTarget.style.transform = 'translate(0,0)'
-                  e.currentTarget.style.boxShadow = '8px 8px 0 var(--ink)'
                 }}
               >
                 <span style={{ color: a.color, display: 'flex', alignItems: 'center', flexShrink: 0 }}>

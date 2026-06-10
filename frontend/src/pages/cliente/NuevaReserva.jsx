@@ -183,7 +183,7 @@ export default function NuevaReserva() {
 
         {/* ── STEP 1 : Servicio ── */}
         {step === 1 && (
-          <div className="card-chunky" style={{ padding: 32 }}>
+          <div className="card-chunky anim-pop-in" style={{ padding: 32 }}>
             <h2 style={{ fontFamily: "'Fredoka One',cursive", fontSize: 22, color: 'var(--ink)', marginBottom: 6 }}>
               ¿Qué servicio deseas?
             </h2>
@@ -215,7 +215,7 @@ export default function NuevaReserva() {
 
         {/* ── STEP 2 : Fecha y sede ── */}
         {step === 2 && (
-          <div className="card-chunky" style={{ padding: 32 }}>
+          <div className="card-chunky anim-pop-in" style={{ padding: 32 }}>
             <h2 style={{ fontFamily: "'Fredoka One',cursive", fontSize: 22, color: 'var(--ink)', marginBottom: 6 }}>Fecha y sede</h2>
             <p style={{ color: '#888', fontSize: 13, marginBottom: 24 }}>Elige cuándo y dónde quieres venir</p>
 
@@ -301,7 +301,7 @@ export default function NuevaReserva() {
 
         {/* ── STEP 3 : Selección de asiento ── */}
         {step === 3 && (
-          <div className="card-chunky" style={{ padding: 32 }}>
+          <div className="card-chunky anim-pop-in" style={{ padding: 32 }}>
             <h2 style={{ fontFamily: "'Fredoka One',cursive", fontSize: 22, color: 'var(--ink)', marginBottom: 6 }}>
               Elige tu asiento
             </h2>
@@ -350,7 +350,7 @@ export default function NuevaReserva() {
 
         {/* ── STEP 4 : Confirmar ── */}
         {step === 4 && (
-          <div className="card-chunky" style={{ padding: 32, borderColor: 'var(--yellow)' }}>
+          <div className="card-chunky anim-pop-in" style={{ padding: 32, borderColor: 'var(--yellow)' }}>
             <h2 style={{ fontFamily: "'Fredoka One',cursive", fontSize: 22, color: 'var(--ink)', marginBottom: 6 }}>Confirma tu reserva</h2>
             <p style={{ color: '#888', fontSize: 13, marginBottom: 24 }}>Revisa los detalles antes de confirmar</p>
 
@@ -404,7 +404,7 @@ export default function NuevaReserva() {
 
         {/* ── STEP 5 : Pago ── */}
         {step === 5 && !boleta && (
-          <div className="card-chunky" style={{ padding: 32 }}>
+          <div className="card-chunky anim-pop-in" style={{ padding: 32 }}>
             <h2 style={{ fontFamily: "'Fredoka One',cursive", fontSize: 22, color: 'var(--ink)', marginBottom: 6 }}>
               💳 Pago del servicio
             </h2>
@@ -524,9 +524,9 @@ export default function NuevaReserva() {
         {/* ── BOLETA / CONFIRMACIÓN ── */}
         {boleta && boleta.metodoPago === 'Efectivo' ? (
           /* Pago efectivo pendiente */
-          <div className="card-chunky" style={{ padding: 32, borderColor: 'var(--yellow)' }}>
+          <div className="card-chunky anim-pop-in" style={{ padding: 32, borderColor: 'var(--yellow)' }}>
             <div style={{ textAlign: 'center', marginBottom: 24 }}>
-              <div style={{ fontSize: 52, marginBottom: 8 }}>💰</div>
+              <div style={{ fontSize: 52, marginBottom: 8 }} className="float">💰</div>
               <h2 style={{ fontFamily: "'Fredoka One',cursive", fontSize: 26, color: '#b38600', margin: 0 }}>¡Reserva creada!</h2>
               <p style={{ color: '#666', fontSize: 14, marginTop: 6 }}>Paga en efectivo al llegar al salón</p>
             </div>
@@ -571,9 +571,9 @@ export default function NuevaReserva() {
           </div>
         ) : boleta ? (
           /* Pago exitoso (tarjeta/simulado) */
-          <div className="card-chunky" style={{ padding: 32, borderColor: 'var(--green)' }}>
+          <div className="card-chunky anim-pop-in" style={{ padding: 32, borderColor: 'var(--green)' }}>
             <div style={{ textAlign: 'center', marginBottom: 24 }}>
-              <div style={{ fontSize: 52, marginBottom: 8 }}>🎉</div>
+              <div style={{ fontSize: 52, marginBottom: 8 }} className="anim-heartbeat">🎉</div>
               <h2 style={{ fontFamily: "'Fredoka One',cursive", fontSize: 26, color: 'var(--green)', margin: 0 }}>¡Pago exitoso!</h2>
               <p style={{ color: '#666', fontSize: 14, marginTop: 6 }}>Tu reserva ha sido confirmada</p>
             </div>

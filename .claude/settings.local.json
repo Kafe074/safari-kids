@@ -104,7 +104,17 @@
       "Bash(python3 -c \"import docx\")",
       "Bash(pip install *)",
       "Bash(python3 *)",
-      "Bash(identify /home/kafe/Documentos/safari-kids_3/DER_Safari_Kids.png)"
+      "Bash(identify /home/kafe/Documentos/safari-kids_3/DER_Safari_Kids.png)",
+      "Bash(npx impeccable *)",
+      "Bash(npx skills *)",
+      "Bash(npx playwright *)",
+      "Bash(pkill -f \"vite --port 5199\")",
+      "Bash(kill 2685174)",
+      "Bash(pkill -9 -f \"port 5199\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --max-time 2 http://localhost:5199/)",
+      "Bash(mvn -q compile)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(pkill -f \"vite\")"
     ],
     "additionalDirectories": [
       "/tmp",

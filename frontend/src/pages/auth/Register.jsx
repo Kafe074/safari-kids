@@ -50,7 +50,7 @@ export default function Register() {
       <div style={{ position: 'absolute', top: -60, right: -60, fontSize: 200, opacity: .04, animation: 'spinSlow 30s linear infinite' }}>🦁</div>
       <div style={{ position: 'absolute', bottom: -40, left: -40, fontSize: 160, opacity: .05, animation: 'spinR 25s linear infinite' }}>🌿</div>
 
-      <div style={{ width: '100%', maxWidth: 520, position: 'relative' }}>
+      <div className="anim-slide-up" style={{ width: '100%', maxWidth: 520, position: 'relative' }}>
         {/* Header */}
         <div style={{
           background: 'linear-gradient(135deg, #FF4F95, #C42E72)',
@@ -136,7 +136,7 @@ export default function Register() {
               </div>
             </div>
 
-            <button type="submit" disabled={loading} style={{
+            <button type="submit" disabled={loading} className="cta-block" style={{
               width: '100%',
               background: loading ? '#ccc' : 'linear-gradient(180deg,#FF7AB0,#FF4F95)',
               color: '#fff', border: `3px solid ${loading ? '#aaa' : 'var(--ink)'}`,

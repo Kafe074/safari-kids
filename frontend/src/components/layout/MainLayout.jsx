@@ -13,7 +13,7 @@ const TITLES = {
   '/admin/horarios':'Gestión de Horarios','/admin/asientos':'Gestión de Sillas',
   '/admin/insumos':'Insumos del Salón','/admin/notificaciones':'Notificaciones',
   '/admin/seguridad':'Seguridad','/promociones':'Promociones & Descuentos',
-  '/empleado':'Mi Agenda','/mis-citas':'Mis Citas',
+  '/empleado':'Mi Agenda','/mis-citas':'Mis Citas','/mis-instrumentos':'Gestión de Instrumentos',
 }
 
 export default function MainLayout() {
@@ -123,7 +123,7 @@ export default function MainLayout() {
           </div>
         </header>
 
-        <main style={{ flex: 1, padding: isMobile ? '12px' : '24px', overflowY: 'auto', overflowX: 'hidden' }}>
+        <main key={pathname} className="fade-page" style={{ flex: 1, padding: isMobile ? '12px' : '24px', overflowY: 'auto', overflowX: 'hidden' }}>
           <Outlet />
         </main>
       </div>

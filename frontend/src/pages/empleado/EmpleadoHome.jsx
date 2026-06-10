@@ -264,7 +264,11 @@ export default function EmpleadoHome() {
           </div>
 
           {isLoading ? (
-            <p style={{ padding: 32, textAlign: 'center', color: '#aaa', fontFamily: "'Caveat',cursive", fontSize: 18 }}>Cargando agenda...</p>
+            <div style={{ padding: 20 }}>
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="skel" style={{ height: 56, marginBottom: 10, animationDelay: `${i * 0.1}s` }} />
+              ))}
+            </div>
           ) : hoyReservas.length === 0 ? (
             <div style={{ padding: 40, textAlign: 'center' }}>
               <LuScissors size={40} color="#ccc" style={{ marginBottom: 10 }} />
