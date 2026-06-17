@@ -61,6 +61,9 @@ public class SecurityConfig {
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler()))
             .authorizeHttpRequests(auth -> auth
+                // El dispatch de ERROR (forward a /error tras un 404/500) no pasa por JwtFilter,
+                // así que exigir auth aquí convertía cualquier error en 401 y deslogueaba al usuario
+                .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ERROR).permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/productos/**", "/api/servicios/**", "/api/categoria-productos/**", "/api/horarios/**", "/api/asientos/**", "/api/promociones/activas").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/promociones/validar-codigo").permitAll()
