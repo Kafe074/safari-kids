@@ -39,6 +39,7 @@ import PromocionesPage       from './pages/promociones/PromocionesPage'
 import HorariosConfigPage    from './pages/admin/config/HorariosConfigPage'
 import AsientosConfigPage    from './pages/admin/config/AsientosConfigPage'
 import InsumosConfigPage     from './pages/admin/config/InsumosConfigPage'
+import SolicitudesInstrumentosPage from './pages/admin/SolicitudesInstrumentosPage'
 import NotificacionesConfigPage from './pages/admin/config/NotificacionesConfigPage'
 import SeguridadConfigPage   from './pages/admin/config/SeguridadConfigPage'
 
@@ -87,6 +88,7 @@ export default function App() {
               <Route path="/admin/horarios"       element={<AdminRoute><HorariosConfigPage /></AdminRoute>} />
               <Route path="/admin/asientos"       element={<AdminRoute><AsientosConfigPage /></AdminRoute>} />
               <Route path="/admin/insumos"        element={<AdminRoute><InsumosConfigPage /></AdminRoute>} />
+              <Route path="/admin/solicitudes"    element={<AdminRoute><SolicitudesInstrumentosPage /></AdminRoute>} />
               <Route path="/admin/notificaciones" element={<AdminRoute><NotificacionesConfigPage /></AdminRoute>} />
               <Route path="/admin/seguridad"      element={<AdminRoute><SeguridadConfigPage /></AdminRoute>} />
             </Route>

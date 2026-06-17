@@ -19,6 +19,7 @@ public class SolicitudInsumoController {
     private final EmpleadoRepository empleadoRepo;
     private final InsumoRepository insumoRepo;
     private final ProductoRepository productoRepo;
+    private final ClienteRepository clienteRepo;
 
     @Data
     public static class ItemDTO {
@@ -30,6 +31,7 @@ public class SolicitudInsumoController {
     @Data
     public static class SolicitudDTO {
         private Integer idEmpleado;
+        private Integer idCliente;
         private String observaciones;
         private List<ItemDTO> items;
     }
@@ -55,8 +57,15 @@ public class SolicitudInsumoController {
         if (empleado == null)
             return ResponseEntity.badRequest().body(ApiResponse.error("Empleado no encontrado"));
 
+        if (dto.getIdCliente() == null)
+            return ResponseEntity.badRequest().body(ApiResponse.error("Debes seleccionar el cliente para el que solicitas el kit"));
+        Cliente cliente = clienteRepo.findById(dto.getIdCliente()).orElse(null);
+        if (cliente == null)
+            return ResponseEntity.badRequest().body(ApiResponse.error("Cliente no encontrado"));
+
         SolicitudInsumo solicitud = SolicitudInsumo.builder()
             .empleado(empleado)
+            .cliente(cliente)
             .observaciones(dto.getObservaciones())
             .build();
 

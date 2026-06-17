@@ -18,6 +18,12 @@ public class SolicitudInsumo {
     @JoinColumn(name = "id_empleado", nullable = false)
     private Empleado empleado;
 
+    // Cliente para el que el empleado solicita el kit. Nullable en BD por
+    // compatibilidad con solicitudes antiguas, pero obligatorio al crear.
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_cliente")
+    private Cliente cliente;
+
     private LocalDateTime fechaSolicitud;
 
     @Enumerated(EnumType.STRING)

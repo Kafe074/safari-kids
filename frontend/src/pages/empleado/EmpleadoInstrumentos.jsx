@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { empleadosApi } from '../../api/empleados'
 import { insumosApi } from '../../api/insumos'
+import { reservasApi } from '../../api/reservas'
 import { solicitudesInsumosApi } from '../../api/solicitudesInsumos'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
@@ -39,6 +40,7 @@ export default function EmpleadoInstrumentos() {
 
   const [tab, setTab] = useState('instrumentos')   // instrumentos | productos
   const [kit, setKit] = useState([])               // [{ tipo:'insumo'|'producto', id, nombre, cantidad }]
+  const [clienteId, setClienteId] = useState('')   // cliente (obligatorio) tomado de las citas asignadas
   const [notas, setNotas] = useState('')
 
   /* ── Datos ── */
@@ -67,10 +69,29 @@ export default function EmpleadoInstrumentos() {
     enabled: !!perfil?.idEmpleado,
   })
 
+  /* Clientes de las citas asignadas al empleado (origen del selector obligatorio) */
+  const { data: misReservas = [] } = useQuery({
+    queryKey: ['mis-asignadas-instrumentos'],
+    queryFn: () => reservasApi.misAsignadas().then(r => r.data.data ?? []),
+    enabled: !!user,
+  })
+
+  const clientes = (() => {
+    const map = new Map()
+    for (const r of misReservas) {
+      const c = r.cliente
+      if (!c?.idCliente || map.has(c.idCliente)) continue
+      const nombre = `${c.usuario?.nombres ?? ''} ${c.usuario?.apellidos ?? ''}`.trim() || `Cliente #${c.idCliente}`
+      map.set(c.idCliente, { idCliente: c.idCliente, nombre })
+    }
+    return [...map.values()]
+  })()
+
   /* ── Mutaciones ── */
   const crearMut = useMutation({
     mutationFn: () => solicitudesInsumosApi.crear({
       idEmpleado: perfil.idEmpleado,
+      idCliente: Number(clienteId),
       observaciones: notas.trim() || null,
       items: kit.map(k => ({
         idInsumo:   k.tipo === 'insumo'   ? k.id : null,
@@ -80,7 +101,7 @@ export default function EmpleadoInstrumentos() {
     }),
     onSuccess: () => {
       qc.invalidateQueries(['mis-solicitudes'])
-      setKit([]); setNotas('')
+      setKit([]); setNotas(''); setClienteId('')
       toast.success('Solicitud enviada. El administrador la revisará pronto 🦁')
     },
     onError: err => toast.error(err.response?.data?.message || 'Error al enviar la solicitud'),
@@ -111,6 +132,7 @@ export default function EmpleadoInstrumentos() {
   const enviar = () => {
     if (!perfil?.idEmpleado) { toast.error('No se encontró tu perfil de empleado'); return }
     if (kit.length === 0)    { toast.error('Agrega al menos un instrumento a tu kit'); return }
+    if (!clienteId)          { toast.error('Selecciona para qué cliente es el kit'); return }
     crearMut.mutate()
   }
 
@@ -263,13 +285,27 @@ export default function EmpleadoInstrumentos() {
               </div>
             )}
 
+            <label className="inp-label" style={{ marginTop: 4 }}>Para qué cliente *</label>
+            {clientes.length === 0 ? (
+              <div style={{ fontSize: 11.5, color: '#B38600', background: '#FFF8E1', border: '2px solid #FFC42E', borderRadius: 10, padding: '8px 10px', marginBottom: 12, fontFamily: "'Poppins',sans-serif" }}>
+                No tienes clientes en tus citas asignadas. El kit se solicita para una cita real, así que primero necesitas tener una reserva asignada.
+              </div>
+            ) : (
+              <select className="inp" value={clienteId} onChange={e => setClienteId(e.target.value)} style={{ marginBottom: 12 }}>
+                <option value="">— Selecciona un cliente —</option>
+                {clientes.map(c => (
+                  <option key={c.idCliente} value={c.idCliente}>{c.nombre}</option>
+                ))}
+              </select>
+            )}
+
             <label className="inp-label" style={{ marginTop: 4 }}>Observaciones (opcional)</label>
             <textarea className="inp" rows={2} value={notas} onChange={e => setNotas(e.target.value)}
               placeholder="Ej: para el turno de la tarde..." style={{ resize: 'vertical', marginBottom: 12 }} />
 
-            <button onClick={enviar} disabled={crearMut.isPending || kit.length === 0}
+            <button onClick={enviar} disabled={crearMut.isPending || kit.length === 0 || !clienteId}
               className="btn btn-g cta-block"
-              style={{ width: '100%', justifyContent: 'center', fontSize: 15, padding: '12px 20px', opacity: kit.length === 0 ? 0.5 : 1 }}>
+              style={{ width: '100%', justifyContent: 'center', fontSize: 15, padding: '12px 20px', opacity: (kit.length === 0 || !clienteId) ? 0.5 : 1 }}>
               <LuSend size={16} /> {crearMut.isPending ? 'Enviando...' : 'Solicitar kit'}
             </button>
           </div>
@@ -304,6 +340,11 @@ export default function EmpleadoInstrumentos() {
                       <span style={{ fontFamily: "'Fredoka One',cursive", fontSize: 13, color: 'var(--ink)' }}>
                         Solicitud #{s.idSolicitud}
                       </span>
+                      {s.cliente && (
+                        <span style={{ background: '#EEF2FF', border: '2px solid #C7D2FE', color: '#3730A3', borderRadius: 999, padding: '1px 9px', fontSize: 11, fontWeight: 700 }}>
+                          👤 {`${s.cliente.usuario?.nombres ?? ''} ${s.cliente.usuario?.apellidos ?? ''}`.trim() || `Cliente #${s.cliente.idCliente}`}
+                        </span>
+                      )}
                       <span style={{ fontSize: 11.5, color: '#999', fontFamily: "'Poppins',sans-serif" }}>{fmtFecha(s.fechaSolicitud)}</span>
                     </div>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>

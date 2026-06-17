@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import {
   LuLayoutDashboard, LuCalendar, LuUsers, LuBriefcase, LuScissors,
   LuShoppingBag, LuBox, LuShoppingCart, LuClipboardList,
-  LuChartBar, LuSettings, LuLogOut, LuTag, LuUserCog,
+  LuChartBar, LuSettings, LuLogOut, LuTag, LuUserCog, LuInbox,
 } from 'react-icons/lu'
 
 const NAV_ADMIN = [
@@ -24,6 +24,7 @@ const NAV_ADMIN = [
   { section: 'Operaciones', items: [
     { to:'/ventas',      icon:<LuShoppingCart size={18} />,  label:'Ventas' },
     { to:'/compras',     icon:<LuClipboardList size={18} />, label:'Compras' },
+    { to:'/admin/solicitudes', icon:<LuInbox size={18} />,   label:'Solicitudes' },
     { to:'/promociones', icon:<LuTag size={18} />,           label:'Promociones' },
     { to:'/reportes',    icon:<LuChartBar size={18} />,      label:'Reportes' },
   ]},

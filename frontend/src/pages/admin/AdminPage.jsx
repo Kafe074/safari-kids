@@ -2,13 +2,14 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/axios'
 import PageHeader from '../../components/common/PageHeader'
-import { LuClock, LuArmchair, LuTag, LuPackage, LuBell, LuShield, LuKey } from 'react-icons/lu'
+import { LuClock, LuArmchair, LuTag, LuPackage, LuBell, LuShield, LuKey, LuInbox } from 'react-icons/lu'
 
 const SECTIONS = [
   { icon: <LuClock    size={32} color="#1B7A3E" />, title: 'Gestión de Horarios',     desc: 'Configura los turnos y franjas horarias disponibles para reservas.',          path: '/admin/horarios' },
   { icon: <LuArmchair size={32} color="#0EA5E9" />, title: 'Gestión de Sillas',        desc: 'Administra las sillas temáticas del salón Safari Kids.',                        path: '/admin/asientos' },
   { icon: <LuTag      size={32} color="#F59E0B" />, title: 'Promociones & Descuentos', desc: 'Crea y activa promociones, códigos de descuento y descuentos para nuevos clientes.', path: '/promociones' },
   { icon: <LuPackage  size={32} color="#8B5CF6" />, title: 'Insumos del Salón',        desc: 'Controla los materiales y consumibles utilizados en cada servicio.',           path: '/admin/insumos' },
+  { icon: <LuInbox    size={32} color="#1B7A3E" />, title: 'Solicitudes de Instrumentos', desc: 'Revisa, aprueba o rechaza los kits que los empleados solicitan para sus clientes.', path: '/admin/solicitudes' },
   { icon: <LuBell     size={32} color="#EC4899" />, title: 'Notificaciones',           desc: 'Configura alertas y recordatorios automáticos para clientes.',                  path: '/admin/notificaciones' },
   { icon: <LuShield   size={32} color="#6B7280" />, title: 'Seguridad',               desc: 'Gestiona contraseñas, sesiones y permisos de acceso.',                          path: '/admin/seguridad' },
 ]
