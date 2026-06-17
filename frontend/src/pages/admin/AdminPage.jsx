@@ -5,13 +5,13 @@ import PageHeader from '../../components/common/PageHeader'
 import { LuClock, LuArmchair, LuTag, LuPackage, LuBell, LuShield, LuKey, LuInbox } from 'react-icons/lu'
 
 const SECTIONS = [
-  { icon: <LuClock    size={32} color="#1B7A3E" />, title: 'Gestión de Horarios',     desc: 'Configura los turnos y franjas horarias disponibles para reservas.',          path: '/admin/horarios' },
-  { icon: <LuArmchair size={32} color="#0EA5E9" />, title: 'Gestión de Sillas',        desc: 'Administra las sillas temáticas del salón Safari Kids.',                        path: '/admin/asientos' },
-  { icon: <LuTag      size={32} color="#F59E0B" />, title: 'Promociones & Descuentos', desc: 'Crea y activa promociones, códigos de descuento y descuentos para nuevos clientes.', path: '/promociones' },
-  { icon: <LuPackage  size={32} color="#8B5CF6" />, title: 'Insumos del Salón',        desc: 'Controla los materiales y consumibles utilizados en cada servicio.',           path: '/admin/insumos' },
-  { icon: <LuInbox    size={32} color="#1B7A3E" />, title: 'Solicitudes de Instrumentos', desc: 'Revisa, aprueba o rechaza los kits que los empleados solicitan para sus clientes.', path: '/admin/solicitudes' },
-  { icon: <LuBell     size={32} color="#EC4899" />, title: 'Notificaciones',           desc: 'Configura alertas y recordatorios automáticos para clientes.',                  path: '/admin/notificaciones' },
-  { icon: <LuShield   size={32} color="#6B7280" />, title: 'Seguridad',               desc: 'Gestiona contraseñas, sesiones y permisos de acceso.',                          path: '/admin/seguridad' },
+  { icon: <LuClock size={32} color="#1B7A3E" />, title: 'Gestión de Horarios', desc: 'Configura los turnos y franjas horarias disponibles para reservas.', path: '/admin/horarios' },
+  { icon: <LuArmchair size={32} color="#0EA5E9" />, title: 'Gestión de Sillas', desc: 'Administra las sillas temáticas del salón Safari Kids.', path: '/admin/asientos' },
+  { icon: <LuTag size={32} color="#F59E0B" />, title: 'Promociones & Descuentos', desc: 'Crea y activa promociones, códigos de descuento y descuentos para nuevos clientes.', path: '/promociones' },
+  { icon: <LuPackage size={32} color="#8B5CF6" />, title: 'Insumos del Salón', desc: 'Controla los materiales y consumibles utilizados en cada servicio.', path: '/admin/insumos' },
+  { icon: <LuInbox size={32} color="#1B7A3E" />, title: 'Solicitudes de Instrumentos', desc: 'Revisa, aprueba o rechaza los kits que los empleados solicitan para sus clientes.', path: '/admin/solicitudes' },
+  { icon: <LuBell size={32} color="#EC4899" />, title: 'Notificaciones', desc: 'Configura alertas y recordatorios automáticos para clientes.', path: '/admin/notificaciones' },
+  { icon: <LuShield size={32} color="#6B7280" />, title: 'Seguridad', desc: 'Gestiona contraseñas, sesiones y permisos de acceso.', path: '/admin/seguridad' },
 ]
 
 export default function AdminPage() {
@@ -30,7 +30,6 @@ export default function AdminPage() {
         <div>
           <p style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', marginBottom: 4 }}>Sistema activo</p>
           <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>🦁 Safari Kids v1.0</h2>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', marginTop: 4 }}>Spring Boot + React + MySQL</p>
         </div>
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
           {[['Clientes', dash?.totalClientes], ['Empleados', dash?.totalEmpleados], ['Reservas', dash?.totalReservas]].map(([l, v]) => (
@@ -62,13 +61,13 @@ export default function AdminPage() {
       {/* Credentials box */}
       <div className="card-admin">
         <h3 style={{ fontWeight: 700, color: '#1a2e1a', marginBottom: 14, fontSize: 15, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <LuKey size={16} /> Credenciales de Prueba (seed)
+          <LuKey size={16} /> Credenciales de Prueba
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 10 }}>
           {[
             { role: 'Administrador', email: 'admin@safarikids.com', pass: 'admin123', color: '#e8f5e9', border: '#a5d6a7', tc: '#1b5e20' },
-            { role: 'Empleado',      email: 'carlos@safarikids.com', pass: 'emp123',  color: '#e3f2fd', border: '#90caf9', tc: '#0d47a1' },
-            { role: 'Cliente',       email: 'sofia@gmail.com',       pass: 'cli123',  color: '#fff8e1', border: '#ffe082', tc: '#e65100' },
+            { role: 'Empleado', email: 'carlos@safarikids.com', pass: 'emp123', color: '#e3f2fd', border: '#90caf9', tc: '#0d47a1' },
+            { role: 'Cliente', email: 'sofia@gmail.com', pass: 'cli123', color: '#fff8e1', border: '#ffe082', tc: '#e65100' },
           ].map(c => (
             <div key={c.role} style={{ background: c.color, border: `1px solid ${c.border}`, borderRadius: 12, padding: '14px 16px' }}>
               <p style={{ fontWeight: 800, fontSize: 13, color: c.tc, marginBottom: 6 }}>{c.role}</p>
