@@ -181,7 +181,8 @@ export default function ReservaPresencialModal({ onClose, onSaved }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
                 <label className="inp-label">Fecha</label>
-                <input type="date" className="inp" min={hoy} value={form.fecha} onChange={set('fecha')} />
+                <input type="date" className="inp" min={hoy} value={form.fecha}
+                  onChange={e => setForm(p => ({ ...p, fecha: e.target.value, horaInicio: '' }))} />
               </div>
               <div>
                 <label className="inp-label">Hora</label>
@@ -189,7 +190,8 @@ export default function ReservaPresencialModal({ onClose, onSaved }) {
                   <option value="">Hora…</option>
                   {horarios.map(h => {
                     const v = h.horaInicio?.substring(0, 5)
-                    return <option key={h.idHorario} value={v}>{v}</option>
+                    const past = form.fecha && new Date(`${form.fecha}T${v}:00`).getTime() <= Date.now()
+                    return <option key={h.idHorario} value={v} disabled={past}>{v}{past ? ' (pasó)' : ''}</option>
                   })}
                 </select>
               </div>

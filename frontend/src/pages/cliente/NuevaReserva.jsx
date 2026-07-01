@@ -251,7 +251,7 @@ export default function NuevaReserva() {
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Fredoka One',cursive", fontSize: 15, color: 'var(--ink)', marginBottom: 10 }}>
                   <LuCalendar size={18} /> Fecha de visita
                 </label>
-                <input type="date" value={form.fecha} onChange={e => setForm(f => ({ ...f, fecha: e.target.value }))}
+                <input type="date" value={form.fecha} onChange={e => setForm(f => ({ ...f, fecha: e.target.value, horario: '' }))}
                   min={new Date().toISOString().split('T')[0]} style={inputStyle}
                   onFocus={e => e.target.style.boxShadow = '4px 4px 0 var(--ink)'}
                   onBlur={e => e.target.style.boxShadow = 'none'} />
@@ -264,14 +264,20 @@ export default function NuevaReserva() {
                   {horarios.map(h => {
                     const label = h.horaInicio?.substring(0, 5)
                     const sel   = form.horario === label
+                    const past  = form.fecha && new Date(`${form.fecha}T${label}:00`).getTime() <= Date.now()
                     return (
-                      <button key={h.idHorario} onClick={() => setForm(f => ({ ...f, horario: label }))} style={{
+                      <button key={h.idHorario} disabled={past}
+                        title={past ? 'Este horario ya pasó' : undefined}
+                        onClick={() => !past && setForm(f => ({ ...f, horario: label }))} style={{
                         padding: '10px 6px', borderRadius: 12,
                         border: `3px solid ${sel ? 'var(--pink)' : 'var(--ink)'}`,
-                        background: sel ? 'var(--yellow)' : '#fff', color: 'var(--ink)',
-                        fontFamily: "'Fredoka One',cursive", fontSize: 14, cursor: 'pointer',
-                        boxShadow: sel ? '4px 4px 0 var(--ink)' : '2px 2px 0 var(--ink)',
-                        transition: 'all .15s', transform: sel ? 'translate(-1px,-1px)' : 'none',
+                        background: past ? '#eee' : sel ? 'var(--yellow)' : '#fff',
+                        color: past ? '#aaa' : 'var(--ink)',
+                        fontFamily: "'Fredoka One',cursive", fontSize: 14,
+                        cursor: past ? 'not-allowed' : 'pointer',
+                        textDecoration: past ? 'line-through' : 'none',
+                        boxShadow: past ? 'none' : sel ? '4px 4px 0 var(--ink)' : '2px 2px 0 var(--ink)',
+                        transition: 'all .15s', transform: sel && !past ? 'translate(-1px,-1px)' : 'none',
                       }}>{label}</button>
                     )
                   })}

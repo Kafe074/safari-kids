@@ -44,5 +44,10 @@ public class Reserva {
     @Column(length = 20, unique = true)
     private String codigoReserva;
 
+    /** Evita reenviar el recordatorio "1 hora antes". Las filas antiguas quedan en NULL (tratado como false). */
+    @Column
+    @Builder.Default
+    private Boolean recordatorioEnviado = false;
+
     public enum EstadoReserva { Pendiente, Confirmado, Cancelado }
 }

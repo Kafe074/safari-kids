@@ -77,6 +77,31 @@ public class EmailService {
             });
     }
 
+    /**
+     * Envío SÍNCRONO para diagnóstico: no traga el error, lo devuelve.
+     * @return null si se envió bien, o "Clase: mensaje" con el error real.
+     */
+    public String enviarDiagnostico(String destino, String asunto, String html) {
+        if (!habilitado()) return "MAIL_USERNAME no configurado (variable de entorno ausente)";
+        try {
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, false, StandardCharsets.UTF_8.name());
+            helper.setFrom(new InternetAddress(username, fromName, StandardCharsets.UTF_8.name()));
+            helper.setTo(destino);
+            helper.setSubject(asunto);
+            helper.setText(html, true);
+            mailSender.send(msg);
+            log.info("[Email][DIAG] Enviado a {}", destino);
+            return null;
+        } catch (Exception e) {
+            log.warn("[Email][DIAG] Error enviando a {}: {}", destino, e.toString());
+            return e.getClass().getSimpleName() + ": " + e.getMessage();
+        }
+    }
+
+    public boolean estaConfigurado() { return habilitado(); }
+    public String usernameConfigurado() { return username == null ? "" : username; }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Correos específicos
     // ─────────────────────────────────────────────────────────────────────────
@@ -116,6 +141,19 @@ public class EmailService {
             + " ha sido <b>cancelada</b>.</p>"
             + "<p>Si no fuiste tú o deseas reagendar, ingresa a tu cuenta cuando quieras.</p>");
         enviar(correo, "Reserva cancelada — Safari Kids", html);
+    }
+
+    public void enviarRecordatorio(String correo, String nombre, String codigo,
+            String fecha, String hora, String local) {
+        String html = layout("Recordatorio de tu cita ⏰",
+            "<p>Hola <b>" + esc(nombre) + "</b>,</p>"
+            + "<p>Te recordamos que tu cita en <b>Safari Kids</b> es <b>en aproximadamente 1 hora</b>. "
+            + "¡Te esperamos! 🦁</p>"
+            + detalle("Código", codigo)
+            + detalle("Fecha", fecha)
+            + detalle("Hora", hora)
+            + detalle("Sede", local));
+        enviar(correo, "Recordatorio: tu cita es en 1 hora — Safari Kids", html);
     }
 
     public void enviarCambioPassword(String correo, String nombre) {

@@ -98,8 +98,12 @@ public class ReservaController {
         Cliente cliente = clienteRepo.findByUsuarioIdUsuario(usuario.getIdUsuario())
             .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
 
+        String errHora = horarioYaPaso(req.getFecha(), req.getHoraInicio());
+        if (errHora != null) return ResponseEntity.badRequest().body(ApiResponse.error(errHora));
+
+        // Online: la confirmación se envía tras el pago (PagoController), así que aquí no notificamos.
         Map<String, Object> result = registrarReserva(cliente, req.getFecha(), req.getHoraInicio(),
-            req.getIdServicio(), req.getIdAsiento(), req.getIdEmpleado(), req.getLocal(), req.getObservaciones());
+            req.getIdServicio(), req.getIdAsiento(), req.getIdEmpleado(), req.getLocal(), req.getObservaciones(), false);
         return ResponseEntity.ok(ApiResponse.ok("Reserva creada", result));
     }
 
@@ -111,6 +115,9 @@ public class ReservaController {
         String dni = req.getDni() == null ? null : req.getDni().trim();
         if (dni == null || !dni.matches("\\d{8}"))
             return ResponseEntity.badRequest().body(ApiResponse.error("El DNI debe tener 8 dígitos"));
+
+        String errHora = horarioYaPaso(req.getFecha(), req.getHoraInicio());
+        if (errHora != null) return ResponseEntity.badRequest().body(ApiResponse.error(errHora));
 
         Cliente cliente = clienteRepo.findByDni(dni).orElseGet(() -> {
             Rol rolCliente = rolRepo.findByNombre("Cliente")
@@ -133,16 +140,29 @@ public class ReservaController {
                 .build());
         });
 
+        // Walk-in: no pasa por pago online, así que enviamos la confirmación aquí mismo.
         Map<String, Object> result = registrarReserva(cliente, req.getFecha(), req.getHoraInicio(),
-            req.getIdServicio(), req.getIdAsiento(), req.getIdEmpleado(), req.getLocal(), req.getObservaciones());
+            req.getIdServicio(), req.getIdAsiento(), req.getIdEmpleado(), req.getLocal(), req.getObservaciones(), true);
         result.put("dni", dni);
         result.put("cuentaNueva", Boolean.FALSE.equals(cliente.getReclamada()));
         return ResponseEntity.ok(ApiResponse.ok("Reserva presencial creada", result));
     }
 
+    /** Devuelve un mensaje de error si el horario elegido (fecha+hora) ya pasó; null si es válido/futuro. */
+    private String horarioYaPaso(String fecha, String horaInicio) {
+        try {
+            java.time.LocalDateTime inicio = java.time.LocalDateTime.of(
+                LocalDate.parse(fecha), LocalTime.parse(horaInicio));
+            if (inicio.isBefore(java.time.LocalDateTime.now()))
+                return "Ese horario ya pasó. Elige un horario más tarde o para otro día.";
+        } catch (Exception ignored) { /* fecha/hora mal formadas: se validan más adelante */ }
+        return null;
+    }
+
     /** Lógica común de creación de reserva (web y presencial). */
     private Map<String, Object> registrarReserva(Cliente cliente, String fecha, String horaInicio,
-            Integer idServicio, Integer idAsiento, Integer idEmpleado, String local, String observaciones) {
+            Integer idServicio, Integer idAsiento, Integer idEmpleado, String local, String observaciones,
+            boolean notificarConfirmacion) {
         LocalDate fechaDate = LocalDate.parse(fecha);
 
         Horario horario = horarioRepo.findByHoraInicio(LocalTime.parse(horaInicio))
@@ -197,6 +217,14 @@ public class ReservaController {
         // Aviso interno al personal por Telegram (no bloquea ni rompe la reserva)
         telegramService.avisarNuevaReserva(codigo, nombreUsuario(cliente.getUsuario()), servicioNombre,
             fecha, horaInicio, local, nombreUsuario(empleado.getUsuario()));
+
+        // Confirmación al cliente (async, tolerante a fallos; correos walk-in ficticios se omiten solos).
+        // El pago aún no ocurre → efectivo=true ("registrada, presenta tu código al llegar").
+        Usuario uCliente = cliente.getUsuario();
+        if (notificarConfirmacion && uCliente != null) {
+            emailService.enviarConfirmacionReserva(uCliente.getCorreo(), uCliente.getNombres(),
+                codigo, servicioNombre, fecha, horaInicio, local, true);
+        }
 
         Map<String, Object> result = new HashMap<>();
         result.put("idReserva", reserva.getIdReserva());
