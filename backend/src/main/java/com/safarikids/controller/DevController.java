@@ -30,6 +30,7 @@ public class DevController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> mailTest(@RequestParam String to) {
         Map<String, Object> info = new LinkedHashMap<>();
         info.put("configurado", emailService.estaConfigurado());
+        info.put("transporte", emailService.transporte());
         info.put("username", emailService.usernameConfigurado());
         info.put("host", host);
         info.put("port", port);

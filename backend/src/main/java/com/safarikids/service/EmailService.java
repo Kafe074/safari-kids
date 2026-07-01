@@ -35,12 +35,95 @@ public class EmailService {
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
 
+    /** Si está seteada, se envía por la API HTTP de Brevo (puerto 443) en vez de SMTP.
+     *  Necesario en hostings como Railway que bloquean los puertos SMTP (25/465/587). */
+    @Value("${brevo.api-key:}")
+    private String brevoApiKey;
+
+    private static final java.net.http.HttpClient HTTP = java.net.http.HttpClient.newBuilder()
+        .connectTimeout(java.time.Duration.ofSeconds(10)).build();
+
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
 
+    private boolean usaBrevo() {
+        return brevoApiKey != null && !brevoApiKey.isBlank();
+    }
+
+    /** Transporte activo, para diagnóstico. */
+    public String transporte() {
+        return usaBrevo() ? "Brevo (HTTP)" : "SMTP";
+    }
+
     private boolean habilitado() {
+        // En ambos transportes el remitente es la cuenta configurada (Gmail verificado en Brevo).
         return username != null && !username.isBlank();
+    }
+
+    /** Envío síncrono real; devuelve null si OK o el mensaje de error. Elige transporte automáticamente. */
+    private String enviarSync(String destino, String asunto, String html) {
+        return usaBrevo() ? enviarViaBrevo(destino, asunto, html) : enviarViaSmtp(destino, asunto, html);
+    }
+
+    private String enviarViaSmtp(String destino, String asunto, String html) {
+        try {
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, false, StandardCharsets.UTF_8.name());
+            // Gmail obliga a que el remitente sea la cuenta autenticada; solo personalizamos el nombre.
+            helper.setFrom(new InternetAddress(username, fromName, StandardCharsets.UTF_8.name()));
+            helper.setTo(destino);
+            helper.setSubject(asunto);
+            helper.setText(html, true);
+            mailSender.send(msg);
+            return null;
+        } catch (Exception e) {
+            return e.getClass().getSimpleName() + ": " + e.getMessage();
+        }
+    }
+
+    private String enviarViaBrevo(String destino, String asunto, String html) {
+        try {
+            String body = "{"
+                + "\"sender\":{\"name\":" + jsonStr(fromName) + ",\"email\":" + jsonStr(username) + "},"
+                + "\"to\":[{\"email\":" + jsonStr(destino) + "}],"
+                + "\"subject\":" + jsonStr(asunto) + ","
+                + "\"htmlContent\":" + jsonStr(html)
+                + "}";
+            java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder()
+                .uri(java.net.URI.create("https://api.brevo.com/v3/smtp/email"))
+                .timeout(java.time.Duration.ofSeconds(15))
+                .header("api-key", brevoApiKey)
+                .header("content-type", "application/json")
+                .header("accept", "application/json")
+                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
+                .build();
+            java.net.http.HttpResponse<String> res = HTTP.send(req, java.net.http.HttpResponse.BodyHandlers.ofString());
+            if (res.statusCode() / 100 == 2) return null;
+            return "Brevo HTTP " + res.statusCode() + ": " + res.body();
+        } catch (Exception e) {
+            return e.getClass().getSimpleName() + ": " + e.getMessage();
+        }
+    }
+
+    /** Escapa una cadena como literal JSON (con comillas incluidas). */
+    private static String jsonStr(String s) {
+        if (s == null) return "\"\"";
+        StringBuilder b = new StringBuilder("\"");
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '"':  b.append("\\\""); break;
+                case '\\': b.append("\\\\"); break;
+                case '\n': b.append("\\n");  break;
+                case '\r': b.append("\\r");  break;
+                case '\t': b.append("\\t");  break;
+                default:
+                    if (c < 0x20) b.append(String.format("\\u%04x", (int) c));
+                    else b.append(c);
+            }
+        }
+        return b.append('"').toString();
     }
 
     /** ¿Es un correo real al que podemos escribir? (las cuentas walk-in usan un correo ficticio) */
@@ -59,22 +142,11 @@ public class EmailService {
             return;
         }
 
-        CompletableFuture
-            .runAsync(() -> {
-                try {
-                    MimeMessage msg = mailSender.createMimeMessage();
-                    MimeMessageHelper helper = new MimeMessageHelper(msg, false, StandardCharsets.UTF_8.name());
-                    // Gmail obliga a que el remitente sea la cuenta autenticada; solo personalizamos el nombre.
-                    helper.setFrom(new InternetAddress(username, fromName, StandardCharsets.UTF_8.name()));
-                    helper.setTo(destino);
-                    helper.setSubject(asunto);
-                    helper.setText(html, true);
-                    mailSender.send(msg);
-                    log.info("[Email] Enviado a {} — {}", destino, asunto);
-                } catch (Exception e) {
-                    log.warn("[Email] Error enviando a {}: {}", destino, e.getMessage());
-                }
-            });
+        CompletableFuture.runAsync(() -> {
+            String err = enviarSync(destino, asunto, html);
+            if (err == null) log.info("[Email] Enviado a {} — {} (vía {})", destino, asunto, transporte());
+            else             log.warn("[Email] Error enviando a {} (vía {}): {}", destino, transporte(), err);
+        });
     }
 
     /**
@@ -82,21 +154,11 @@ public class EmailService {
      * @return null si se envió bien, o "Clase: mensaje" con el error real.
      */
     public String enviarDiagnostico(String destino, String asunto, String html) {
-        if (!habilitado()) return "MAIL_USERNAME no configurado (variable de entorno ausente)";
-        try {
-            MimeMessage msg = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(msg, false, StandardCharsets.UTF_8.name());
-            helper.setFrom(new InternetAddress(username, fromName, StandardCharsets.UTF_8.name()));
-            helper.setTo(destino);
-            helper.setSubject(asunto);
-            helper.setText(html, true);
-            mailSender.send(msg);
-            log.info("[Email][DIAG] Enviado a {}", destino);
-            return null;
-        } catch (Exception e) {
-            log.warn("[Email][DIAG] Error enviando a {}: {}", destino, e.toString());
-            return e.getClass().getSimpleName() + ": " + e.getMessage();
-        }
+        if (!habilitado()) return "Remitente no configurado (falta MAIL_USERNAME)";
+        String err = enviarSync(destino, asunto, html);
+        if (err == null) log.info("[Email][DIAG] Enviado a {} vía {}", destino, transporte());
+        else             log.warn("[Email][DIAG] Error enviando a {} vía {}: {}", destino, transporte(), err);
+        return err;
     }
 
     public boolean estaConfigurado() { return habilitado(); }
