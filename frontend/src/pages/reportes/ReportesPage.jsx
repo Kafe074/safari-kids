@@ -6,7 +6,7 @@ import {
   LuCalendar, LuUsers, LuBriefcase, LuShoppingCart, LuBox, LuScissors,
   LuClipboardList, LuPrinter, LuDownload, LuDollarSign, LuTrendingUp,
   LuTrendingDown, LuWallet, LuTag, LuTruck, LuPackage, LuTriangleAlert,
-  LuStore, LuReceipt,
+  LuStore, LuReceipt, LuRefreshCw,
 } from 'react-icons/lu'
 
 const PEN = new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN', minimumFractionDigits: 2 })
@@ -72,9 +72,13 @@ function MiniTable({ cols, rows, empty = 'Sin datos' }) {
 }
 
 export default function ReportesPage() {
-  const { data: rep, isLoading } = useQuery({
+  const { data: rep, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['reporte-general'],
     queryFn: () => reportesApi.getGeneral().then(r => r.data.data),
+    // El reporte consulta muchas tablas; si la BD (Neon) está "fría" la primera
+    // petición puede tardar. Reintentamos con espera creciente para no fallar.
+    retry: 4,
+    retryDelay: attempt => Math.min(attempt * 2000, 8000),
   })
 
   const handleCSV = () => {
@@ -144,7 +148,15 @@ export default function ReportesPage() {
           {[...Array(8)].map((_, i) => <div key={i} className="skel" style={{ height: 96, borderRadius: 16, animationDelay: `${i * 0.06}s` }} />)}
         </div>
       ) : !rep ? (
-        <div className="empty-state"><span className="empty-icon">📊</span><p>No se pudo cargar el reporte</p></div>
+        <div className="empty-state">
+          <span className="empty-icon">📊</span>
+          <p>No se pudo cargar el reporte</p>
+          <small>La base de datos puede estar despertando. Espera unos segundos y reintenta.</small>
+          <button className="btn btn-primary" onClick={() => refetch()} disabled={isFetching}
+            style={{ marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <LuRefreshCw size={15} /> {isFetching ? 'Cargando…' : 'Reintentar'}
+          </button>
+        </div>
       ) : (
         <>
           {/* KPIs */}

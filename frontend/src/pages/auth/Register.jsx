@@ -8,7 +8,7 @@ export default function Register() {
   const { register } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({
-    nombres: '', apellidos: '', correo: '', contrasena: '', confirmar: '',
+    nombres: '', apellidos: '', dni: '', correo: '', contrasena: '', confirmar: '',
     telefono: '', direccion: '', fechaNacimiento: '',
   })
   const [loading, setLoading] = useState(false)
@@ -24,12 +24,13 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!/^\d{8}$/.test(form.dni)) { toast.error('El DNI debe tener 8 dígitos'); return }
     if (form.contrasena !== form.confirmar) { toast.error('Las contraseñas no coinciden'); return }
     if (form.contrasena.length < 6) { toast.error('Mínimo 6 caracteres'); return }
     setLoading(true)
     try {
       const userData = await register(
-        form.nombres, form.apellidos, form.correo, form.contrasena,
+        form.nombres, form.apellidos, form.dni, form.correo, form.contrasena,
         form.telefono, form.direccion,
         form.fechaNacimiento ? form.fechaNacimiento : null
       )
@@ -88,6 +89,17 @@ export default function Register() {
                 <input required placeholder="Pérez" value={form.apellidos} onChange={set('apellidos')}
                   style={inp('apellidos')} onFocus={() => setFocused('apellidos')} onBlur={() => setFocused(null)} />
               </div>
+            </div>
+
+            {/* DNI */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelStyle}>DNI</label>
+              <input required inputMode="numeric" maxLength={8} placeholder="12345678" value={form.dni}
+                onChange={e => setForm(p => ({ ...p, dni: e.target.value.replace(/\D/g, '').slice(0, 8) }))}
+                style={inp('dni')} onFocus={() => setFocused('dni')} onBlur={() => setFocused(null)} />
+              <p style={{ fontSize: 11, color: '#999', margin: '4px 2px 0' }}>
+                Si ya reservaste en la tienda, usa el mismo DNI para recuperar tu historial.
+              </p>
             </div>
 
             {/* Correo */}

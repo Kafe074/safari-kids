@@ -7,6 +7,7 @@ import java.time.LocalDate;
 public class RegisterRequest {
     private String nombres;
     private String apellidos;
+    private String dni;
     private String correo;
     private String contrasena;
     private String telefono;

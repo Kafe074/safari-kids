@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { reservasApi } from '../../api/reservas'
 import toast from 'react-hot-toast'
@@ -7,9 +8,11 @@ import {
   LuCircleCheck,
   LuChartBar,
   LuUser,
+  LuUserPlus,
   LuX,
   LuScissors,
 } from 'react-icons/lu'
+import ReservaPresencialModal from '../../components/ReservaPresencialModal'
 
 const BADGE_STYLE = {
   Pendiente:  { background: '#FFC42E', color: '#2B1B00', border: '3px solid #2B1B00', boxShadow: '3px 3px 0 #2B1B00', label: 'Pendiente'  },
@@ -21,6 +24,7 @@ const hoy = new Date().toISOString().split('T')[0]
 
 export default function EmpleadoReservas() {
   const qc = useQueryClient()
+  const [presencial, setPresencial] = useState(false)
 
   const { data: reservas = [], isLoading } = useQuery({
     queryKey: ['mis-asignadas'],
@@ -51,19 +55,32 @@ export default function EmpleadoReservas() {
     <div style={{ background: 'var(--paper)', minHeight: '100vh', padding: 24 }}>
 
       {/* ── Inline header ── */}
-      <div style={{ marginBottom: 28 }}>
-        <span className="section-tag" style={{ color: 'var(--green)' }}>mis citas</span>
-        <h1 className="section-title" style={{ margin: '12px 0 4px' }}>Reservas Asignadas</h1>
-        <p style={{
-          fontFamily: "'Caveat', cursive",
-          fontSize: 20,
-          color: '#888',
-          fontWeight: 700,
-          margin: 0,
-        }}>
-          Todas tus citas — historial y control de estado
-        </p>
+      <div style={{ marginBottom: 28, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
+        <div>
+          <span className="section-tag" style={{ color: 'var(--green)' }}>mis citas</span>
+          <h1 className="section-title" style={{ margin: '12px 0 4px' }}>Reservas Asignadas</h1>
+          <p style={{
+            fontFamily: "'Caveat', cursive",
+            fontSize: 20,
+            color: '#888',
+            fontWeight: 700,
+            margin: 0,
+          }}>
+            Todas tus citas — historial y control de estado
+          </p>
+        </div>
+        <button className="btn btn-g" style={{ padding: '10px 20px', fontSize: 14, gap: 8 }} onClick={() => setPresencial(true)}>
+          <LuUserPlus size={18} /> Reserva presencial
+        </button>
       </div>
+
+      {/* ── Modal reserva presencial (walk-in) ── */}
+      {presencial && (
+        <ReservaPresencialModal
+          onClose={() => setPresencial(false)}
+          onSaved={() => qc.invalidateQueries(['mis-asignadas'])}
+        />
+      )}
 
       {/* ── Summary chips row ── */}
       <div style={{ display: 'flex', gap: 14, marginBottom: 28, flexWrap: 'wrap' }}>

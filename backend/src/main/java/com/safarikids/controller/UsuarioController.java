@@ -20,6 +20,7 @@ public class UsuarioController {
 
     private final UsuarioRepository repository;
     private final PasswordEncoder passwordEncoder;
+    private final com.safarikids.service.EmailService emailService;
 
     @GetMapping
     @PreAuthorize("hasRole('ADMINISTRADOR')")
@@ -66,6 +67,7 @@ public class UsuarioController {
                 return ResponseEntity.badRequest().<ApiResponse<Void>>body(ApiResponse.error("Contraseña actual incorrecta"));
             u.setContrasena(passwordEncoder.encode(req.getNueva()));
             repository.save(u);
+            emailService.enviarCambioPassword(u.getCorreo(), u.getNombres());
             return ResponseEntity.ok(ApiResponse.<Void>ok("Contraseña actualizada", null));
         }).orElse(ResponseEntity.notFound().build());
     }

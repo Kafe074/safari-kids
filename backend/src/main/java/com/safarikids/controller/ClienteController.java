@@ -38,6 +38,14 @@ public class ClienteController {
             .orElse(ResponseEntity.notFound().build());
     }
 
+    /** Busca un cliente por DNI (para autocompletar la reserva presencial). */
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    @GetMapping("/dni/{dni}")
+    public ResponseEntity<ApiResponse<Cliente>> getByDni(@PathVariable String dni) {
+        return repository.findByDni(dni).map(c -> ResponseEntity.ok(ApiResponse.ok(c)))
+            .orElse(ResponseEntity.status(404).body(ApiResponse.error("Cliente no encontrado")));
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<Cliente>> create(@RequestBody Cliente cliente) {
         return ResponseEntity.ok(ApiResponse.ok("Cliente creado", repository.save(cliente)));

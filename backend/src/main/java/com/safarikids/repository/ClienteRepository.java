@@ -6,4 +6,5 @@ import java.util.Optional;
 @Repository
 public interface ClienteRepository extends JpaRepository<Cliente, Integer> {
     Optional<Cliente> findByUsuarioIdUsuario(Integer idUsuario);
+    Optional<Cliente> findByDni(String dni);
 }

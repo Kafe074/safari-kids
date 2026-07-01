@@ -40,8 +40,8 @@ export function AuthProvider({ children }) {
     return userData
   }
 
-  const register = async (nombres, apellidos, correo, contrasena, telefono, direccion, fechaNacimiento) => {
-    const { data } = await api.post('/auth/register', { nombres, apellidos, correo, contrasena, telefono, direccion, fechaNacimiento })
+  const register = async (nombres, apellidos, dni, correo, contrasena, telefono, direccion, fechaNacimiento) => {
+    const { data } = await api.post('/auth/register', { nombres, apellidos, dni, correo, contrasena, telefono, direccion, fechaNacimiento })
     const { token, nombreCompleto, rol } = data.data
     const profile = await fetchProfile(rol, token)
     const userData = { correo, nombreCompleto, rol, token, ...profile }

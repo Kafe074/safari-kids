@@ -9,8 +9,9 @@ import OnboardingTour from '../../components/common/OnboardingTour'
 import toast from 'react-hot-toast'
 import {
   LuCalendar, LuClock, LuCircleCheck, LuChartBar, LuX,
-  LuScissors, LuUser, LuMapPin, LuBanknote, LuSearch,
+  LuScissors, LuUser, LuMapPin, LuBanknote, LuSearch, LuLock,
 } from 'react-icons/lu'
+import CambiarPasswordModal from '../../components/CambiarPasswordModal'
 
 const EMPLEADO_TOUR = [
   {
@@ -88,6 +89,7 @@ export default function EmpleadoHome() {
   const tourKey    = `safari_tour_empleado_${user?.correo ?? 'anon'}`
 
   // Estado para validar pago en efectivo
+  const [showPwd, setShowPwd]             = useState(false)
   const [codigoInput, setCodigoInput]     = useState('')
   const [buscando, setBuscando]           = useState(false)
   const [reservaEncontrada, setReservaEncontrada] = useState(null)
@@ -124,6 +126,7 @@ export default function EmpleadoHome() {
   return (
     <div style={{ background: 'var(--paper)', minHeight: '100vh', padding: 24 }}>
       <OnboardingTour steps={EMPLEADO_TOUR} storageKey={tourKey} />
+      {showPwd && <CambiarPasswordModal onClose={() => setShowPwd(false)} />}
 
       {/* ── Welcome hero ── */}
       <div className="card-chunky" style={{
@@ -146,6 +149,18 @@ export default function EmpleadoHome() {
           <p style={{ fontFamily: "'Caveat', cursive", fontSize: 20, color: 'rgba(255,255,255,.85)', margin: '4px 0 0', fontWeight: 700, textTransform: 'capitalize' }}>
             {fechaLarga}
           </p>
+          <button
+            onClick={() => setShowPwd(true)}
+            style={{
+              marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 7,
+              background: 'rgba(255,255,255,0.18)', color: '#fff',
+              border: '2px solid rgba(255,255,255,0.5)', borderRadius: 999,
+              padding: '7px 15px', fontFamily: "'Nunito',sans-serif", fontWeight: 800,
+              fontSize: 13, cursor: 'pointer',
+            }}
+          >
+            <LuLock size={14} /> Cambiar contraseña
+          </button>
         </div>
 
         {/* Sucursal badge — destacado */}

@@ -16,6 +16,13 @@ public class Cliente {
     @JoinColumn(name = "id_usuario", nullable = false, unique = true)
     private Usuario usuario;
 
+    @Column(length = 8, unique = true)
+    private String dni;
+
+    /** false = cuenta provisional creada en tienda (walk-in), aún no reclamada por el cliente.
+     *  null/true = cuenta normal o ya reclamada desde la web. */
+    private Boolean reclamada;
+
     @Column(length = 20)
     private String telefono;
 

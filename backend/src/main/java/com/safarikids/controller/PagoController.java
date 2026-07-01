@@ -27,6 +27,8 @@ public class PagoController {
     private final ReservaRepository        reservaRepo;
     private final PromocionRepository      promocionRepo;
     private final DetalleReservaRepository detalleReservaRepo;
+    private final com.safarikids.service.EmailService emailService;
+    private final com.safarikids.service.TelegramService telegramService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Pago>>> getAll() {
@@ -174,7 +176,31 @@ public class PagoController {
             boleta.put("precioOriginal", precioBase);
         }
 
+        // Correo de confirmación al cliente
+        String nombreCliente = null;
+        if (reserva.getCliente() != null && reserva.getCliente().getUsuario() != null) {
+            var u = reserva.getCliente().getUsuario();
+            nombreCliente = ((u.getNombres() != null ? u.getNombres() : "") + " "
+                + (u.getApellidos() != null ? u.getApellidos() : "")).trim();
+            emailService.enviarConfirmacionReserva(
+                u.getCorreo(), u.getNombres(),
+                reserva.getCodigoReserva(),
+                str(boleta.get("servicio")),
+                str(boleta.get("fechaReserva")),
+                str(boleta.get("hora")),
+                reserva.getLocal(),
+                esEfectivo);
+        }
+
+        // Aviso interno al personal por Telegram
+        telegramService.avisarNuevoPago(reserva.getCodigoReserva(), nombreCliente,
+            "S/ " + montoFinal, metodo.name(), esEfectivo);
+
         return ResponseEntity.ok(ApiResponse.ok("Pago procesado exitosamente", boleta));
+    }
+
+    private String str(Object o) {
+        return o == null ? null : o.toString();
     }
 
     private BigDecimal calcularPrecioBase(Reserva reserva) {

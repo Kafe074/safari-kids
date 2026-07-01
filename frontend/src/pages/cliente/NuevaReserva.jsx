@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { reservasApi } from '../../api/reservas'
+import { empleadosApi } from '../../api/empleados'
 import { horariosApi } from '../../api/horarios'
 import { pagosApi } from '../../api/pagos'
 import { promocionesApi } from '../../api/promociones'
@@ -11,10 +12,16 @@ import toast from 'react-hot-toast'
 import {
   LuScissors, LuCalendar, LuClock, LuMapPin, LuUser,
   LuStickyNote, LuCircleCheck, LuChevronLeft, LuChevronRight,
-  LuTriangleAlert, LuTag, LuCreditCard, LuBanknote, LuPrinter,
+  LuTriangleAlert, LuTag, LuCreditCard, LuBanknote, LuPrinter, LuSparkles,
 } from 'react-icons/lu'
 
 import { SUCURSALES } from '../../constants/sucursales'
+
+const nombreEstilista = (e) => {
+  const u = e?.usuario
+  if (!u) return 'Estilista'
+  return `${u.nombres ?? ''} ${u.apellidos ?? ''}`.trim() || 'Estilista'
+}
 
 function StepIndicator({ step, total }) {
   return (
@@ -65,7 +72,7 @@ export default function NuevaReserva() {
   const preSelected = location.state?.servicio ?? ''
 
   const [step, setStep]     = useState(preSelected ? 2 : 1)
-  const [form, setForm]     = useState({ servicio: null, fecha: '', horario: '', sucursal: '', asiento: null, notas: '' })
+  const [form, setForm]     = useState({ servicio: null, fecha: '', horario: '', sucursal: '', estilista: '', asiento: null, notas: '' })
   const [loading, setLoading]   = useState(false)
   const [reservaCreada, setReservaCreada] = useState(null) // { idReserva, codigoReserva }
 
@@ -95,6 +102,12 @@ export default function NuevaReserva() {
     queryFn: () => api.get('/asientos').then(r => (r.data.data ?? []).filter(a => a.estado === 'Disponible')),
   })
 
+  const { data: estilistas = [], isLoading: cargandoEstilistas } = useQuery({
+    queryKey: ['estilistas-disponibles', form.sucursal],
+    queryFn: () => empleadosApi.disponibles(form.sucursal).then(r => r.data.data ?? []),
+    enabled: !!form.sucursal,
+  })
+
   const selServicio = (s) => { setForm(f => ({ ...f, servicio: s })); setStep(2) }
 
   const handleConfirm = async () => {
@@ -108,6 +121,7 @@ export default function NuevaReserva() {
         horaInicio:    form.horario,
         idServicio:    form.servicio.idServicio,
         idAsiento:     form.asiento.idAsiento,
+        idEmpleado:    form.estilista && form.estilista !== 'cualquiera' ? form.estilista.idEmpleado : null,
         local:         form.sucursal,
         observaciones: form.notas,
       })
@@ -270,7 +284,7 @@ export default function NuevaReserva() {
                 {SUCURSALES.map(s => {
                   const sel = form.sucursal === s
                   return (
-                    <div key={s} onClick={() => setForm(f => ({ ...f, sucursal: s }))} style={{
+                    <div key={s} onClick={() => setForm(f => ({ ...f, sucursal: s, estilista: '' }))} style={{
                       padding: '13px 16px', borderRadius: 14, marginBottom: 10, cursor: 'pointer',
                       border: `3px solid ${sel ? 'var(--pink)' : 'var(--ink)'}`,
                       background: sel ? 'var(--yellow)' : '#fff',
@@ -285,14 +299,73 @@ export default function NuevaReserva() {
                   )
                 })}
               </div>
+
+              {/* Estilista disponible en la sede elegida */}
+              {form.sucursal && (
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Fredoka One',cursive", fontSize: 15, color: 'var(--ink)', marginBottom: 10 }}>
+                    <LuUser size={18} /> Elige a tu estilista
+                  </label>
+
+                  {cargandoEstilistas ? (
+                    <p style={{ color: '#888', fontSize: 13, padding: '8px 0' }}>Buscando estilistas disponibles…</p>
+                  ) : (
+                    <>
+                      {/* Opción: cualquiera disponible */}
+                      <div onClick={() => setForm(f => ({ ...f, estilista: 'cualquiera' }))} style={{
+                        padding: '13px 16px', borderRadius: 14, marginBottom: 10, cursor: 'pointer',
+                        border: `3px solid ${form.estilista === 'cualquiera' ? 'var(--pink)' : 'var(--ink)'}`,
+                        background: form.estilista === 'cualquiera' ? 'var(--yellow)' : '#fff',
+                        boxShadow: form.estilista === 'cualquiera' ? '4px 4px 0 var(--ink)' : '2px 2px 0 var(--ink)',
+                        display: 'flex', alignItems: 'center', gap: 10, transition: 'all .15s',
+                        transform: form.estilista === 'cualquiera' ? 'translate(-2px,-2px)' : 'none',
+                      }}>
+                        <LuSparkles size={18} color={form.estilista === 'cualquiera' ? 'var(--ink)' : 'var(--green)'} style={{ flexShrink: 0 }} />
+                        <div>
+                          <span style={{ fontWeight: form.estilista === 'cualquiera' ? 800 : 600, color: 'var(--ink)', fontSize: 13, display: 'block' }}>Cualquiera disponible</span>
+                          <span style={{ color: '#888', fontSize: 11 }}>Te asignamos al estilista con más disponibilidad</span>
+                        </div>
+                        {form.estilista === 'cualquiera' && <LuCircleCheck size={18} color="var(--ink)" style={{ marginLeft: 'auto', flexShrink: 0 }} />}
+                      </div>
+
+                      {estilistas.length === 0 ? (
+                        <p style={{ color: '#aaa', fontSize: 12, fontStyle: 'italic', margin: '4px 0' }}>
+                          No hay estilistas registrados en esta sede. Te asignaremos uno disponible.
+                        </p>
+                      ) : estilistas.map(e => {
+                        const sel = form.estilista !== 'cualquiera' && form.estilista?.idEmpleado === e.idEmpleado
+                        return (
+                          <div key={e.idEmpleado} onClick={() => setForm(f => ({ ...f, estilista: e }))} style={{
+                            padding: '13px 16px', borderRadius: 14, marginBottom: 10, cursor: 'pointer',
+                            border: `3px solid ${sel ? 'var(--pink)' : 'var(--ink)'}`,
+                            background: sel ? 'var(--yellow)' : '#fff',
+                            boxShadow: sel ? '4px 4px 0 var(--ink)' : '2px 2px 0 var(--ink)',
+                            display: 'flex', alignItems: 'center', gap: 10, transition: 'all .15s',
+                            transform: sel ? 'translate(-2px,-2px)' : 'none',
+                          }}>
+                            <div style={{ width: 36, height: 36, borderRadius: '50%', background: sel ? 'var(--ink)' : 'var(--green)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: "'Fredoka One',cursive", fontSize: 16 }}>
+                              {nombreEstilista(e).charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <span style={{ fontWeight: sel ? 800 : 700, color: 'var(--ink)', fontSize: 13, display: 'block' }}>{nombreEstilista(e)}</span>
+                              {e.especialidad && <span style={{ color: '#888', fontSize: 11 }}>{e.especialidad}</span>}
+                            </div>
+                            {sel && <LuCircleCheck size={18} color="var(--ink)" style={{ marginLeft: 'auto', flexShrink: 0 }} />}
+                          </div>
+                        )
+                      })}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
               <button onClick={() => setStep(1)} className="btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 <LuChevronLeft size={18} /> Atrás
               </button>
-              <button disabled={!form.fecha || !form.horario || !form.sucursal} onClick={() => setStep(3)}
-                className="btn btn-g" style={{ flex: 2, opacity: (!form.fecha || !form.horario || !form.sucursal) ? 0.45 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <button disabled={!form.fecha || !form.horario || !form.sucursal || !form.estilista} onClick={() => setStep(3)}
+                className="btn btn-g" style={{ flex: 2, opacity: (!form.fecha || !form.horario || !form.sucursal || !form.estilista) ? 0.45 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 Siguiente <LuChevronRight size={18} />
               </button>
             </div>
@@ -361,6 +434,7 @@ export default function NuevaReserva() {
                 [<LuCalendar size={16} />, 'Fecha',    form.fecha],
                 [<LuClock    size={16} />, 'Hora',     form.horario],
                 [<LuMapPin   size={16} />, 'Sede',     form.sucursal],
+                [<LuUser     size={16} />, 'Estilista', form.estilista === 'cualquiera' ? 'Cualquiera disponible' : nombreEstilista(form.estilista)],
                 [<LuUser     size={16} />, 'Asiento',  form.asiento?.nombre],
               ].map(([ico, l, v]) => (
                 <div key={l} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(27,122,62,.12)' }}>

@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { Link } from 'react-router-dom'
 import {
-  LuCalendar, LuClock, LuShoppingCart, LuPackage, LuArrowRight, LuUser,
+  LuCalendar, LuClock, LuShoppingCart, LuPackage, LuArrowRight, LuUser, LuLock,
 } from 'react-icons/lu'
 import OnboardingTour from '../../components/common/OnboardingTour'
+import CambiarPasswordModal from '../../components/CambiarPasswordModal'
 
 const CLIENTE_TOUR = [
   {
@@ -76,6 +78,7 @@ export default function MiCuenta() {
   const nombre = user?.nombreCompleto || 'Cliente'
   const firstName = nombre.split(' ')[0]
   const tourKey = `safari_tour_cliente_${user?.correo ?? 'anon'}`
+  const [showPwd, setShowPwd] = useState(false)
 
   return (
     <div
@@ -87,6 +90,7 @@ export default function MiCuenta() {
       }}
     >
       <OnboardingTour steps={CLIENTE_TOUR} storageKey={tourKey} />
+      {showPwd && <CambiarPasswordModal onClose={() => setShowPwd(false)} />}
       <div style={{ maxWidth: 820, margin: '0 auto' }}>
 
         {/* ── Hero card ── */}
@@ -157,6 +161,18 @@ export default function MiCuenta() {
               ¿Qué quieres hacer hoy?
             </p>
 
+            <button
+              onClick={() => setShowPwd(true)}
+              style={{
+                marginTop: 18, display: 'inline-flex', alignItems: 'center', gap: 7,
+                background: 'rgba(255,255,255,0.18)', color: '#fff',
+                border: '2px solid rgba(255,255,255,0.5)', borderRadius: 999,
+                padding: '8px 16px', fontFamily: "'Nunito',sans-serif", fontWeight: 800,
+                fontSize: 13, cursor: 'pointer',
+              }}
+            >
+              <LuLock size={14} /> Cambiar contraseña
+            </button>
           </div>
         </div>
 

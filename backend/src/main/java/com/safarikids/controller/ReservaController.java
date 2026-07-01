@@ -33,6 +33,10 @@ public class ReservaController {
     private final UsuarioRepository usuarioRepo;
     private final ServicioInsumoRepository servicioInsumoRepo;
     private final InsumoRepository insumoRepo;
+    private final RolRepository rolRepo;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+    private final com.safarikids.service.EmailService emailService;
+    private final com.safarikids.service.TelegramService telegramService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Reserva>>> getAll() {
@@ -94,42 +98,63 @@ public class ReservaController {
         Cliente cliente = clienteRepo.findByUsuarioIdUsuario(usuario.getIdUsuario())
             .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
 
-        LocalDate fechaDate = LocalDate.parse(req.getFecha());
+        Map<String, Object> result = registrarReserva(cliente, req.getFecha(), req.getHoraInicio(),
+            req.getIdServicio(), req.getIdAsiento(), req.getIdEmpleado(), req.getLocal(), req.getObservaciones());
+        return ResponseEntity.ok(ApiResponse.ok("Reserva creada", result));
+    }
 
-        Horario horario = horarioRepo.findByHoraInicio(LocalTime.parse(req.getHoraInicio()))
+    /** Reserva presencial (walk-in): el staff registra a un cliente por DNI; si no existe se crea
+     *  una cuenta provisional que el cliente podrá reclamar luego desde la web con el mismo DNI. */
+    @Transactional
+    @PostMapping("/presencial")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> crearPresencial(@RequestBody PresencialReservaRequest req) {
+        String dni = req.getDni() == null ? null : req.getDni().trim();
+        if (dni == null || !dni.matches("\\d{8}"))
+            return ResponseEntity.badRequest().body(ApiResponse.error("El DNI debe tener 8 dígitos"));
+
+        Cliente cliente = clienteRepo.findByDni(dni).orElseGet(() -> {
+            Rol rolCliente = rolRepo.findByNombre("Cliente")
+                .orElseThrow(() -> new RuntimeException("Rol Cliente no encontrado"));
+            Usuario usuario = Usuario.builder()
+                .nombres(req.getNombres() != null ? req.getNombres() : "Cliente")
+                .apellidos(req.getApellidos() != null ? req.getApellidos() : dni)
+                .correo(dni + "@walkin.safarikids")
+                .contrasena(passwordEncoder.encode(UUID.randomUUID().toString()))
+                .estado(Usuario.EstadoUsuario.Activo)
+                .fechaRegistro(LocalDate.now())
+                .rol(rolCliente)
+                .build();
+            usuarioRepo.save(usuario);
+            return clienteRepo.save(Cliente.builder()
+                .usuario(usuario)
+                .dni(dni)
+                .reclamada(false)
+                .telefono(req.getTelefono())
+                .build());
+        });
+
+        Map<String, Object> result = registrarReserva(cliente, req.getFecha(), req.getHoraInicio(),
+            req.getIdServicio(), req.getIdAsiento(), req.getIdEmpleado(), req.getLocal(), req.getObservaciones());
+        result.put("dni", dni);
+        result.put("cuentaNueva", Boolean.FALSE.equals(cliente.getReclamada()));
+        return ResponseEntity.ok(ApiResponse.ok("Reserva presencial creada", result));
+    }
+
+    /** Lógica común de creación de reserva (web y presencial). */
+    private Map<String, Object> registrarReserva(Cliente cliente, String fecha, String horaInicio,
+            Integer idServicio, Integer idAsiento, Integer idEmpleado, String local, String observaciones) {
+        LocalDate fechaDate = LocalDate.parse(fecha);
+
+        Horario horario = horarioRepo.findByHoraInicio(LocalTime.parse(horaInicio))
             .orElseGet(() -> horarioRepo.findAll().stream().findFirst()
                 .orElseThrow(() -> new RuntimeException("Sin horarios disponibles")));
 
-        // ── Asignación balanceada por carga del día + filtro de sucursal ─────
-        String sucursalSolicitada = req.getLocal();
-        List<Empleado> activos;
-        if (sucursalSolicitada != null && !sucursalSolicitada.isBlank()) {
-            activos = empleadoRepo.findBySucursalAndEstado(sucursalSolicitada, Empleado.EstadoEmpleado.Activo);
-            if (activos.isEmpty()) activos = empleadoRepo.findByEstado(Empleado.EstadoEmpleado.Activo);
-        } else {
-            activos = empleadoRepo.findByEstado(Empleado.EstadoEmpleado.Activo);
-        }
-        if (activos.isEmpty()) throw new RuntimeException("Sin empleados activos");
-
-        Map<Integer, Long> carga = repository.findByFechaReserva(fechaDate).stream()
-            .filter(r -> r.getEmpleado() != null && r.getEstado() != Reserva.EstadoReserva.Cancelado)
-            .collect(Collectors.groupingBy(r -> r.getEmpleado().getIdEmpleado(), Collectors.counting()));
-
-        long minCarga = activos.stream()
-            .mapToLong(e -> carga.getOrDefault(e.getIdEmpleado(), 0L))
-            .min().orElse(0);
-
-        List<Empleado> candidatos = activos.stream()
-            .filter(e -> carga.getOrDefault(e.getIdEmpleado(), 0L) == minCarga)
-            .collect(Collectors.toList());
-
-        Empleado empleado = candidatos.get(new Random().nextInt(candidatos.size()));
-        // ─────────────────────────────────────────────────────────────────────
+        Empleado empleado = asignarEmpleado(fechaDate, local, idEmpleado);
 
         // Usar asiento seleccionado o auto-asignar
         Asiento asiento;
-        if (req.getIdAsiento() != null) {
-            asiento = asientoRepo.findById(req.getIdAsiento())
+        if (idAsiento != null) {
+            asiento = asientoRepo.findById(idAsiento)
                 .orElseThrow(() -> new RuntimeException("Asiento no encontrado"));
             if (asiento.getEstado() != Asiento.EstadoAsiento.Disponible) {
                 throw new RuntimeException("El asiento seleccionado no está disponible");
@@ -151,24 +176,74 @@ public class ReservaController {
             .asiento(asiento)
             .fechaReserva(fechaDate)
             .estado(Reserva.EstadoReserva.Pendiente)
-            .local(req.getLocal())
-            .observaciones(req.getObservaciones())
+            .local(local)
+            .observaciones(observaciones)
             .codigoReserva(codigo)
             .build();
         repository.save(reserva);
 
-        if (req.getIdServicio() != null) {
-            servicioRepo.findById(req.getIdServicio()).ifPresent(servicio -> {
+        String servicioNombre = null;
+        if (idServicio != null) {
+            var servicioOpt = servicioRepo.findById(idServicio);
+            if (servicioOpt.isPresent()) {
+                Servicio servicio = servicioOpt.get();
+                servicioNombre = servicio.getNombre();
                 DetalleReserva detalle = DetalleReserva.builder()
                     .reserva(reserva).servicio(servicio).cantidad(1).subtotal(servicio.getPrecio()).build();
                 detalleRepo.save(detalle);
-            });
+            }
         }
+
+        // Aviso interno al personal por Telegram (no bloquea ni rompe la reserva)
+        telegramService.avisarNuevaReserva(codigo, nombreUsuario(cliente.getUsuario()), servicioNombre,
+            fecha, horaInicio, local, nombreUsuario(empleado.getUsuario()));
 
         Map<String, Object> result = new HashMap<>();
         result.put("idReserva", reserva.getIdReserva());
         result.put("codigoReserva", codigo);
-        return ResponseEntity.ok(ApiResponse.ok("Reserva creada", result));
+        return result;
+    }
+
+    /** Nombre completo de un usuario para mostrar en avisos ("Nombres Apellidos"). */
+    private String nombreUsuario(Usuario u) {
+        if (u == null) return null;
+        String nom = u.getNombres() != null ? u.getNombres() : "";
+        String ape = u.getApellidos() != null ? u.getApellidos() : "";
+        return (nom + " " + ape).trim();
+    }
+
+    /** Si el cliente eligió un estilista, lo usa; si no, asigna por carga de trabajo del día y sede. */
+    private Empleado asignarEmpleado(LocalDate fechaDate, String local, Integer idEmpleado) {
+        if (idEmpleado != null) {
+            Empleado empleado = empleadoRepo.findById(idEmpleado)
+                .orElseThrow(() -> new RuntimeException("Estilista no encontrado"));
+            if (empleado.getEstado() != Empleado.EstadoEmpleado.Activo)
+                throw new RuntimeException("El estilista seleccionado no está disponible");
+            return empleado;
+        }
+
+        List<Empleado> activos;
+        if (local != null && !local.isBlank()) {
+            activos = empleadoRepo.findBySucursalAndEstado(local, Empleado.EstadoEmpleado.Activo);
+            if (activos.isEmpty()) activos = empleadoRepo.findByEstado(Empleado.EstadoEmpleado.Activo);
+        } else {
+            activos = empleadoRepo.findByEstado(Empleado.EstadoEmpleado.Activo);
+        }
+        if (activos.isEmpty()) throw new RuntimeException("Sin empleados activos");
+
+        Map<Integer, Long> carga = repository.findByFechaReserva(fechaDate).stream()
+            .filter(r -> r.getEmpleado() != null && r.getEstado() != Reserva.EstadoReserva.Cancelado)
+            .collect(Collectors.groupingBy(r -> r.getEmpleado().getIdEmpleado(), Collectors.counting()));
+
+        long minCarga = activos.stream()
+            .mapToLong(e -> carga.getOrDefault(e.getIdEmpleado(), 0L))
+            .min().orElse(0);
+
+        List<Empleado> candidatos = activos.stream()
+            .filter(e -> carga.getOrDefault(e.getIdEmpleado(), 0L) == minCarga)
+            .collect(Collectors.toList());
+
+        return candidatos.get(new Random().nextInt(candidatos.size()));
     }
 
     @PostMapping
@@ -197,6 +272,14 @@ public class ReservaController {
         return repository.findById(id).map(r -> {
             r.setEstado(Reserva.EstadoReserva.Cancelado);
             repository.save(r);
+            String fechaStr = r.getFechaReserva() != null ? r.getFechaReserva().toString() : null;
+            if (r.getCliente() != null && r.getCliente().getUsuario() != null) {
+                Usuario u = r.getCliente().getUsuario();
+                emailService.enviarCancelacionReserva(u.getCorreo(), u.getNombres(),
+                    r.getCodigoReserva(), fechaStr);
+            }
+            telegramService.avisarCancelacion(r.getCodigoReserva(),
+                r.getCliente() != null ? nombreUsuario(r.getCliente().getUsuario()) : null, fechaStr);
             return ResponseEntity.ok(ApiResponse.ok("Reserva cancelada", (Void) null));
         }).orElse(ResponseEntity.notFound().build());
     }
@@ -229,6 +312,22 @@ public class ReservaController {
         private String horaInicio;
         private Integer idServicio;
         private Integer idAsiento;
+        private Integer idEmpleado;
+        private String local;
+        private String observaciones;
+    }
+
+    @Data
+    public static class PresencialReservaRequest {
+        private String dni;
+        private String nombres;
+        private String apellidos;
+        private String telefono;
+        private String fecha;
+        private String horaInicio;
+        private Integer idServicio;
+        private Integer idAsiento;
+        private Integer idEmpleado;
         private String local;
         private String observaciones;
     }

@@ -32,6 +32,17 @@ public class EmpleadoController {
         return ResponseEntity.ok(ApiResponse.ok(repository.findAll()));
     }
 
+    /** Estilistas activos de una sede, para que el cliente elija al reservar. */
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    @GetMapping("/disponibles")
+    public ResponseEntity<ApiResponse<List<Empleado>>> disponibles(
+            @RequestParam(required = false) String sucursal) {
+        List<Empleado> activos = (sucursal != null && !sucursal.isBlank())
+            ? repository.findBySucursalAndEstado(sucursal, Empleado.EstadoEmpleado.Activo)
+            : repository.findByEstado(Empleado.EstadoEmpleado.Activo);
+        return ResponseEntity.ok(ApiResponse.ok(activos));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Empleado>> getById(@PathVariable Integer id) {
         return repository.findById(id).map(e -> ResponseEntity.ok(ApiResponse.ok(e)))

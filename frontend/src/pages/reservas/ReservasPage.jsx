@@ -3,10 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { reservasApi } from '../../api/reservas'
 import toast from 'react-hot-toast'
 import {
-  LuPlus, LuPencil, LuTrash2, LuSearch, LuCalendar, LuFilter, LuX, LuCircleCheck,
+  LuPlus, LuPencil, LuTrash2, LuSearch, LuCalendar, LuFilter, LuX, LuCircleCheck, LuUserPlus,
 } from 'react-icons/lu'
 
 import { SUCURSALES } from '../../constants/sucursales'
+import ReservaPresencialModal from '../../components/ReservaPresencialModal'
 
 const ESTADO_COLORS = { Pendiente: 'warn', Confirmado: 'ok', Cancelado: 'err' }
 const ESTADOS = ['Todos', 'Pendiente', 'Confirmado', 'Cancelado']
@@ -20,6 +21,7 @@ function getNombreCliente(r) {
 export default function ReservasPage() {
   const qc = useQueryClient()
   const [modal, setModal] = useState(false)
+  const [presencial, setPresencial] = useState(false)
   const [editing, setEditing] = useState(null)
   const [filterEstado, setFilterEstado] = useState('Todos')
   const [search, setSearch] = useState('')
@@ -66,9 +68,14 @@ export default function ReservasPage() {
           <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 14, color: '#666', fontWeight: 400 }}>
             Administra todas las reservas del salón
           </p>
-          <button className="btn btn-g" style={{ padding: '10px 22px', fontSize: 15, gap: 8 }} onClick={openNew}>
-            <LuPlus size={18} /> Nueva Reserva
-          </button>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button className="btn btn-secondary" style={{ padding: '10px 18px', fontSize: 14, gap: 8 }} onClick={() => setPresencial(true)}>
+              <LuUserPlus size={18} /> Reserva presencial
+            </button>
+            <button className="btn btn-g" style={{ padding: '10px 22px', fontSize: 15, gap: 8 }} onClick={openNew}>
+              <LuPlus size={18} /> Nueva Reserva
+            </button>
+          </div>
         </div>
       </div>
 
@@ -166,6 +173,14 @@ export default function ReservasPage() {
           {filtered.length} reserva(s){search || filterEstado !== 'Todos' ? ' (filtradas)' : ''}
         </div>
       </div>
+
+      {/* ── Modal reserva presencial (walk-in) ── */}
+      {presencial && (
+        <ReservaPresencialModal
+          onClose={() => setPresencial(false)}
+          onSaved={() => qc.invalidateQueries(['reservas'])}
+        />
+      )}
 
       {/* ── Modal ── */}
       {modal && (
