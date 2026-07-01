@@ -84,30 +84,109 @@ export default function ReportesPage() {
   const handleCSV = () => {
     if (!rep) return
     const L = []
-    const push = (...cells) => L.push(cells.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(','))
-    push('Reporte General — Safari Kids', new Date().toLocaleString('es-PE'))
-    push('')
-    push('RESUMEN')
-    Object.entries(rep.resumen ?? {}).forEach(([k, v]) => push(k, v))
-    push('')
-    push('FINANZAS')
-    Object.entries(rep.finanzas ?? {}).forEach(([k, v]) => push(k, v))
-    push('')
-    push('RESERVAS POR ESTADO'); Object.entries(rep.reservas?.porEstado ?? {}).forEach(([k, v]) => push(k, v))
-    push('RESERVAS POR SEDE');   Object.entries(rep.reservas?.porLocal ?? {}).forEach(([k, v]) => push(k, v))
-    push('TOP EMPLEADOS (reservas)'); (rep.reservas?.topEmpleados ?? []).forEach(o => push(o.nombre, o.cantidad))
-    push('')
-    push('PRODUCTOS MÁS VENDIDOS', 'cantidad', 'monto'); (rep.ventas?.topProductos ?? []).forEach(o => push(o.nombre, o.cantidad, o.monto))
-    push('')
-    push('PAGOS POR MÉTODO', 'cantidad', 'monto'); Object.entries(rep.pagos?.porMetodo ?? {}).forEach(([k, v]) => push(k, v.cantidad, v.monto))
-    push('')
-    push('COMPRAS POR PROVEEDOR', 'monto'); (rep.compras?.porProveedor ?? []).forEach(o => push(o.nombre, o.monto))
-    push('')
-    push('INVENTARIO BAJO STOCK', 'sucursal', 'stock', 'minimo'); (rep.inventario?.bajoStock ?? []).forEach(o => push(o.producto, o.sucursal, o.stock, o.minimo))
-    push('')
-    push('SERVICIOS MÁS SOLICITADOS', 'cantidad'); (rep.servicios?.topSolicitados ?? []).forEach(o => push(o.nombre, o.cantidad))
-    push('')
-    push('INSUMOS BAJO STOCK', 'stock'); (rep.insumos?.bajoStock ?? []).forEach(o => push(o.nombre, o.stock))
+    const esc  = c => `"${String(c ?? '').replace(/"/g, '""')}"`
+    const row  = (...cells) => L.push(cells.map(esc).join(','))
+    const gap  = () => L.push('')
+    // Título de sección con una línea separadora para que resalte en Excel/Sheets.
+    const section = title => { gap(); row('══════════  ' + title + '  ══════════') }
+    const money = v => 'S/ ' + Number(v ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    const num   = v => Number(v ?? 0).toLocaleString('es-PE')
+    const cap   = s => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
+
+    // Etiquetas legibles en español para las claves crudas del backend.
+    const RESUMEN_LBL = {
+      reservas: 'Reservas', clientes: 'Clientes', empleados: 'Empleados', productos: 'Productos',
+      servicios: 'Servicios', ventas: 'Ventas', compras: 'Compras', proveedores: 'Proveedores',
+      promociones: 'Promociones', insumos: 'Insumos',
+    }
+    const FIN_LBL = {
+      ingresoVentas: 'Ingreso por ventas', ingresoPagos: 'Ingreso por pagos (reservas)',
+      ingresoTotal: 'Ingreso total', gastoCompras: 'Gasto en compras', balance: 'Balance',
+      ticketPromedio: 'Ticket promedio', ventasAnuladas: 'Ventas anuladas',
+    }
+    const FIN_MONTO = new Set(['ingresoVentas', 'ingresoPagos', 'ingresoTotal', 'gastoCompras', 'balance', 'ticketPromedio'])
+
+    // ── Encabezado ──
+    row('SAFARI KIDS  —  REPORTE GENERAL DEL SISTEMA')
+    row('Generado el', new Date().toLocaleString('es-PE', { dateStyle: 'long', timeStyle: 'short' }))
+
+    // ── Resumen ──
+    section('RESUMEN GENERAL')
+    row('Métrica', 'Total')
+    Object.entries(rep.resumen ?? {}).forEach(([k, v]) => row(RESUMEN_LBL[k] ?? cap(k), num(v)))
+
+    // ── Finanzas ──
+    section('FINANZAS')
+    row('Concepto', 'Valor')
+    Object.entries(rep.finanzas ?? {}).forEach(([k, v]) =>
+      row(FIN_LBL[k] ?? cap(k), FIN_MONTO.has(k) ? money(v) : num(v)))
+
+    // ── Reservas ──
+    section('RESERVAS POR ESTADO')
+    row('Estado', 'Cantidad')
+    Object.entries(rep.reservas?.porEstado ?? {}).forEach(([k, v]) => row(k, num(v)))
+
+    section('RESERVAS POR SEDE')
+    row('Sede', 'Cantidad')
+    Object.entries(rep.reservas?.porLocal ?? {}).forEach(([k, v]) => row(k, num(v)))
+
+    section('TOP EMPLEADOS (por reservas)')
+    row('Empleado', 'Reservas')
+    ;(rep.reservas?.topEmpleados ?? []).forEach(o => row(o.nombre, num(o.cantidad)))
+
+    // ── Ventas ──
+    section('PRODUCTOS MÁS VENDIDOS')
+    row('Producto', 'Cantidad', 'Monto')
+    ;(rep.ventas?.topProductos ?? []).forEach(o => row(o.nombre, num(o.cantidad), money(o.monto)))
+
+    // ── Pagos ──
+    section('PAGOS POR MÉTODO')
+    row('Método', 'Cantidad', 'Monto cobrado')
+    Object.entries(rep.pagos?.porMetodo ?? {}).forEach(([k, v]) => row(k, num(v.cantidad), money(v.monto)))
+    if (rep.pagos?.pendientes != null) row('Pagos pendientes', num(rep.pagos.pendientes), '')
+
+    // ── Compras ──
+    section('COMPRAS POR PROVEEDOR')
+    row('Proveedor', 'Monto')
+    ;(rep.compras?.porProveedor ?? []).forEach(o => row(o.nombre, money(o.monto)))
+
+    // ── Inventario ──
+    section('INVENTARIO')
+    row('Valor total del inventario', money(rep.inventario?.valorInventario))
+    gap()
+    row('Stock por sucursal', 'Unidades')
+    Object.entries(rep.inventario?.porSucursal ?? {}).forEach(([k, v]) => row(k, num(v)))
+    gap()
+    row('Bajo stock — Producto', 'Sucursal', 'Stock actual', 'Stock mínimo')
+    ;(rep.inventario?.bajoStock ?? []).forEach(o => row(o.producto, o.sucursal, num(o.stock), num(o.minimo)))
+
+    // ── Servicios ──
+    section('SERVICIOS MÁS SOLICITADOS')
+    row('Servicio', 'Cantidad')
+    ;(rep.servicios?.topSolicitados ?? []).forEach(o => row(o.nombre, num(o.cantidad)))
+
+    // ── Empleados ──
+    section('EMPLEADOS POR SEDE')
+    row('Sede', 'Cantidad')
+    Object.entries(rep.empleados?.porSucursal ?? {}).forEach(([k, v]) => row(k, num(v)))
+    section('EMPLEADOS POR TURNO')
+    row('Turno', 'Cantidad')
+    Object.entries(rep.empleados?.porTurno ?? {}).forEach(([k, v]) => row(k, num(v)))
+
+    // ── Promociones ──
+    section('PROMOCIONES')
+    row('Promociones activas', num(rep.promociones?.activas))
+    gap()
+    row('Por tipo', 'Cantidad')
+    Object.entries(rep.promociones?.porTipo ?? {}).forEach(([k, v]) => row(k, num(v)))
+
+    // ── Insumos ──
+    section('INSUMOS BAJO STOCK')
+    row('Insumo', 'Stock')
+    ;(rep.insumos?.bajoStock ?? []).forEach(o => row(o.nombre, num(o.stock)))
+
+    gap()
+    row('— Fin del reporte —')
 
     const csv = '﻿' + L.join('\r\n')
     const a = document.createElement('a')
