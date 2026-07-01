@@ -226,6 +226,10 @@ export default function EmpleadosPage() {
 
 function EmpleadoForm({ initial, onClose, onSaved }) {
   const [form, setForm] = useState({
+    nombres:      '',
+    apellidos:    '',
+    correo:       '',
+    contrasena:   '',
     especialidad: initial?.especialidad ?? '',
     sucursal:     initial?.sucursal     ?? '',
     turno:        initial?.turno        ?? 'Mañana',
@@ -236,7 +240,14 @@ function EmpleadoForm({ initial, onClose, onSaved }) {
   const [checking, setChecking] = useState(false)
   const f = k => e => setForm(p => ({ ...p, [k]: e.target.value }))
 
-  const handleSave = () => setShowPwd(true)
+  const handleSave = () => {
+    if (!initial) {
+      if (!form.nombres.trim() || !form.apellidos.trim()) { toast.error('Ingresa nombres y apellidos'); return }
+      if (!form.correo.includes('@')) { toast.error('Correo no válido'); return }
+      if (form.contrasena.length < 6) { toast.error('La contraseña debe tener al menos 6 caracteres'); return }
+    }
+    setShowPwd(true)
+  }
 
   const confirmSave = async () => {
     if (!password.trim()) { toast.error('Ingresa tu contraseña'); return }
@@ -277,6 +288,28 @@ function EmpleadoForm({ initial, onClose, onSaved }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {!initial && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label className="inp-label">Nombres</label>
+              <input className="inp" value={form.nombres} onChange={f('nombres')} placeholder="Ej: María" />
+            </div>
+            <div>
+              <label className="inp-label">Apellidos</label>
+              <input className="inp" value={form.apellidos} onChange={f('apellidos')} placeholder="Ej: Gómez" />
+            </div>
+          </div>
+          <div>
+            <label className="inp-label">Correo (usuario de acceso)</label>
+            <input className="inp" type="email" value={form.correo} onChange={f('correo')} placeholder="empleado@safarikids.com" />
+          </div>
+          <div>
+            <label className="inp-label">Contraseña inicial</label>
+            <input className="inp" type="password" value={form.contrasena} onChange={f('contrasena')} placeholder="Mínimo 6 caracteres" />
+          </div>
+        </>
+      )}
       <div>
         <label className="inp-label">Especialidad</label>
         <input className="inp" value={form.especialidad} onChange={f('especialidad')} placeholder="Ej: Corte Infantil" />

@@ -1,13 +1,20 @@
 package com.safarikids.controller;
 
 import com.safarikids.dto.ApiResponse;
+import com.safarikids.dto.EmpleadoRequest;
 import com.safarikids.model.Empleado;
+import com.safarikids.model.Rol;
+import com.safarikids.model.Usuario;
 import com.safarikids.repository.EmpleadoRepository;
+import com.safarikids.repository.RolRepository;
 import com.safarikids.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -17,6 +24,8 @@ public class EmpleadoController {
 
     private final EmpleadoRepository repository;
     private final UsuarioRepository usuarioRepo;
+    private final RolRepository rolRepo;
+    private final PasswordEncoder passwordEncoder;
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<Empleado>> me() {
@@ -49,9 +58,45 @@ public class EmpleadoController {
             .orElse(ResponseEntity.notFound().build());
     }
 
+    /** Crea el Usuario (login, rol "Empleado") + el registro Empleado en una sola transacción. */
+    @Transactional
     @PostMapping
-    public ResponseEntity<ApiResponse<Empleado>> create(@RequestBody Empleado empleado) {
-        return ResponseEntity.ok(ApiResponse.ok("Empleado creado", repository.save(empleado)));
+    public ResponseEntity<ApiResponse<Empleado>> create(@RequestBody EmpleadoRequest req) {
+        if (req.getNombres() == null || req.getNombres().isBlank()
+                || req.getApellidos() == null || req.getApellidos().isBlank())
+            return ResponseEntity.badRequest().body(ApiResponse.error("Nombres y apellidos son obligatorios"));
+        if (req.getCorreo() == null || !req.getCorreo().contains("@"))
+            return ResponseEntity.badRequest().body(ApiResponse.error("Correo no válido"));
+        if (req.getContrasena() == null || req.getContrasena().length() < 6)
+            return ResponseEntity.badRequest().body(ApiResponse.error("La contraseña debe tener al menos 6 caracteres"));
+
+        String correo = req.getCorreo().trim();
+        if (usuarioRepo.existsByCorreo(correo))
+            return ResponseEntity.badRequest().body(ApiResponse.error("El correo ya está registrado"));
+
+        Rol rolEmpleado = rolRepo.findByNombre("Empleado").orElse(null);
+        if (rolEmpleado == null)
+            return ResponseEntity.status(500).body(ApiResponse.error("Rol Empleado no encontrado"));
+
+        Usuario usuario = usuarioRepo.save(Usuario.builder()
+            .nombres(req.getNombres().trim())
+            .apellidos(req.getApellidos().trim())
+            .correo(correo)
+            .contrasena(passwordEncoder.encode(req.getContrasena()))
+            .estado(Usuario.EstadoUsuario.Activo)
+            .fechaRegistro(LocalDate.now())
+            .rol(rolEmpleado)
+            .build());
+
+        Empleado empleado = repository.save(Empleado.builder()
+            .usuario(usuario)
+            .especialidad(req.getEspecialidad())
+            .sucursal(req.getSucursal())
+            .turno(req.getTurno())
+            .estado(req.getEstado() != null ? req.getEstado() : Empleado.EstadoEmpleado.Activo)
+            .build());
+
+        return ResponseEntity.ok(ApiResponse.ok("Empleado creado", empleado));
     }
 
     @PutMapping("/{id}")
