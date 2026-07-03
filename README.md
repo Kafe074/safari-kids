@@ -181,6 +181,39 @@ git push origin main
 
 ---
 
+## 🧰 Herramientas de desarrollo (curso)
+
+Este proyecto integra las 4 categorías de herramientas de desarrollo pedidas por el curso:
+
+| Categoría | Herramienta | Estado | Evidencia |
+|-----------|-------------|--------|-----------|
+| Seguimiento de incidentes | GitHub Issues | ✅ | Templates en `.github/ISSUE_TEMPLATE/` (bug report, feature request). Ver pestaña **Issues** del repo. |
+| Integración continua (CI) | GitHub Actions | ✅ | Workflow en `.github/workflows/ci.yml`. Corre en cada push/PR a `main`: build + tests del backend (Maven, 40 tests con H2 en memoria) y build del frontend (npm). Ver pestaña **Actions** del repo. |
+| Entrega continua (CD) | Railway + Vercel | ✅ | Ambos conectados al repo de GitHub; despliegan automáticamente en cada push a `main` (ver sección "Flujo completo de despliegue" arriba). |
+| Plataforma en la nube | Railway (backend + PostgreSQL) y Vercel (frontend) | ✅ | URLs de producción en la sección "URLs de producción" arriba. |
+
+### Sistema de seguimiento de incidentes (GitHub Issues)
+
+- Se reporta un bug o se pide una funcionalidad desde la pestaña **Issues** del repositorio, usando las plantillas de `.github/ISSUE_TEMPLATE/`.
+- `bug_report.md`: descripción, pasos para reproducir, comportamiento esperado/actual, entorno y severidad.
+- `feature_request.md`: problema/necesidad, solución propuesta, módulo afectado.
+- Labels sugeridos: `bug`, `enhancement` (se asignan automáticamente desde la plantilla).
+
+### Integración continua (GitHub Actions)
+
+El workflow `.github/workflows/ci.yml` define dos jobs independientes que corren en paralelo en cada `push`/`pull_request` a `main`:
+
+1. **backend**: `mvn clean verify` con JDK 17 — compila y corre los 40 tests (JUnit + MockMvc) contra H2 en memoria (perfil `test`), sin depender de MySQL/PostgreSQL.
+2. **frontend**: `npm ci` + `npm run build` con Node 18 — valida que el build de Vite no se rompa.
+
+Si cualquiera de los dos falla, el PR queda marcado en rojo antes de llegar a `main`.
+
+### Entrega continua y plataforma en la nube (Railway + Vercel)
+
+Ya documentado arriba en detalle. En resumen: **no hay un pipeline de CD propio** (Railway/Vercel son quienes escuchan el push y despliegan), y el CI de GitHub Actions es independiente de ese despliegue — es decir, hoy el deploy **no espera** a que el CI pase (Railway compila con `-DskipTests`). Si se quisiera encadenar CI → CD con gate de tests, sería un paso adicional (por ejemplo, deploy hooks de Railway/Vercel disparados solo si el job `backend`/`frontend` de Actions termina en verde).
+
+---
+
 ## 👤 Usuarios de prueba (seed)
 
 | Rol | Correo | Contraseña |

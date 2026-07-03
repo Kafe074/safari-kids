@@ -71,6 +71,7 @@ class AuthControllerIntegrationTest {
         RegisterRequest req = new RegisterRequest();
         req.setNombres("Juan");
         req.setApellidos("Pérez");
+        req.setDni("87654321");
         req.setCorreo("juantest_integ@gmail.com");
         req.setContrasena("pass1234");
         req.setTelefono("987654321");
