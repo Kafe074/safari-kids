@@ -8,6 +8,7 @@ import com.safarikids.model.Usuario;
 import com.safarikids.repository.EmpleadoRepository;
 import com.safarikids.repository.RolRepository;
 import com.safarikids.repository.UsuarioRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -61,15 +62,7 @@ public class EmpleadoController {
     /** Crea el Usuario (login, rol "Empleado") + el registro Empleado en una sola transacción. */
     @Transactional
     @PostMapping
-    public ResponseEntity<ApiResponse<Empleado>> create(@RequestBody EmpleadoRequest req) {
-        if (req.getNombres() == null || req.getNombres().isBlank()
-                || req.getApellidos() == null || req.getApellidos().isBlank())
-            return ResponseEntity.badRequest().body(ApiResponse.error("Nombres y apellidos son obligatorios"));
-        if (req.getCorreo() == null || !req.getCorreo().contains("@"))
-            return ResponseEntity.badRequest().body(ApiResponse.error("Correo no válido"));
-        if (req.getContrasena() == null || req.getContrasena().length() < 6)
-            return ResponseEntity.badRequest().body(ApiResponse.error("La contraseña debe tener al menos 6 caracteres"));
-
+    public ResponseEntity<ApiResponse<Empleado>> create(@Valid @RequestBody EmpleadoRequest req) {
         String correo = req.getCorreo().trim();
         if (usuarioRepo.existsByCorreo(correo))
             return ResponseEntity.badRequest().body(ApiResponse.error("El correo ya está registrado"));

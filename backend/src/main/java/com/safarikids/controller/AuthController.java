@@ -33,7 +33,7 @@ public class AuthController {
     private final com.safarikids.service.EmailService emailService;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody LoginRequest req) {
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@jakarta.validation.Valid @RequestBody LoginRequest req) {
         try {
             authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(req.getCorreo(), req.getContrasena()));
@@ -65,10 +65,8 @@ public class AuthController {
 
     @org.springframework.transaction.annotation.Transactional
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<LoginResponse>> register(@RequestBody RegisterRequest req) {
-        String dni = req.getDni() == null ? null : req.getDni().trim();
-        if (dni == null || !dni.matches("\\d{8}"))
-            return ResponseEntity.badRequest().body(ApiResponse.error("El DNI debe tener 8 dígitos"));
+    public ResponseEntity<ApiResponse<LoginResponse>> register(@jakarta.validation.Valid @RequestBody RegisterRequest req) {
+        String dni = req.getDni().trim();
 
         java.util.Optional<Rol> rolOpt = rolRepo.findByNombre("Cliente");
         if (rolOpt.isEmpty())

@@ -3,6 +3,9 @@ package com.safarikids.controller;
 import com.safarikids.dto.ApiResponse;
 import com.safarikids.model.Usuario;
 import com.safarikids.repository.UsuarioRepository;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -60,7 +63,7 @@ public class UsuarioController {
     }
 
     @PutMapping("/cambiar-password")
-    public ResponseEntity<ApiResponse<Void>> cambiarPassword(@RequestBody CambiarPasswordRequest req) {
+    public ResponseEntity<ApiResponse<Void>> cambiarPassword(@Valid @RequestBody CambiarPasswordRequest req) {
         String correo = SecurityContextHolder.getContext().getAuthentication().getName();
         return repository.findByCorreo(correo).map(u -> {
             if (!passwordEncoder.matches(req.getActual(), u.getContrasena()))
@@ -74,7 +77,10 @@ public class UsuarioController {
 
     @Data
     public static class CambiarPasswordRequest {
+        @NotBlank(message = "La contraseña actual es obligatoria")
         private String actual;
+        @NotBlank(message = "La nueva contraseña es obligatoria")
+        @Size(min = 6, message = "La nueva contraseña debe tener al menos 6 caracteres")
         private String nueva;
     }
 }

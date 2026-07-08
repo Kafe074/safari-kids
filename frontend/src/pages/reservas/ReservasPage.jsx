@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { reservasApi } from '../../api/reservas'
+import { empleadosApi } from '../../api/empleados'
 import toast from 'react-hot-toast'
 import {
-  LuPlus, LuPencil, LuTrash2, LuSearch, LuCalendar, LuFilter, LuX, LuCircleCheck, LuUserPlus,
+  LuPlus, LuPencil, LuTrash2, LuSearch, LuCalendar, LuFilter, LuX, LuCircleCheck,
 } from 'react-icons/lu'
 
 import { SUCURSALES } from '../../constants/sucursales'
@@ -14,6 +15,12 @@ const ESTADOS = ['Todos', 'Pendiente', 'Confirmado', 'Cancelado']
 
 function getNombreCliente(r) {
   const u = r?.cliente?.usuario
+  if (!u) return '—'
+  return `${u.nombres ?? ''} ${u.apellidos ?? ''}`.trim() || '—'
+}
+
+function getNombreEmpleado(r) {
+  const u = r?.empleado?.usuario
   if (!u) return '—'
   return `${u.nombres ?? ''} ${u.apellidos ?? ''}`.trim() || '—'
 }
@@ -37,7 +44,6 @@ export default function ReservasPage() {
     onError: () => toast.error('Error al eliminar'),
   })
 
-  const openNew  = () => { setEditing(null); setModal(true) }
   const openEdit = row => { setEditing(row); setModal(true) }
   const closeModal = () => setModal(false)
 
@@ -45,11 +51,13 @@ export default function ReservasPage() {
     const matchEstado = filterEstado === 'Todos' || r.estado === filterEstado
     const q = search.toLowerCase()
     const nombre = getNombreCliente(r).toLowerCase()
+    const nombreEmpleado = getNombreEmpleado(r).toLowerCase()
     const matchSearch = !q || String(r.idReserva ?? '').includes(q)
       || String(r.fechaReserva ?? '').toLowerCase().includes(q)
       || String(r.observaciones ?? '').toLowerCase().includes(q)
       || String(r.local ?? '').toLowerCase().includes(q)
       || nombre.includes(q)
+      || nombreEmpleado.includes(q)
     return matchEstado && matchSearch
   })
 
@@ -69,10 +77,7 @@ export default function ReservasPage() {
             Administra todas las reservas del salón
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button className="btn btn-secondary" style={{ padding: '10px 18px', fontSize: 14, gap: 8 }} onClick={() => setPresencial(true)}>
-              <LuUserPlus size={18} /> Reserva presencial
-            </button>
-            <button className="btn btn-g" style={{ padding: '10px 22px', fontSize: 15, gap: 8 }} onClick={openNew}>
+            <button className="btn btn-g" style={{ padding: '10px 22px', fontSize: 15, gap: 8 }} onClick={() => setPresencial(true)}>
               <LuPlus size={18} /> Nueva Reserva
             </button>
           </div>
@@ -83,7 +88,7 @@ export default function ReservasPage() {
       <div className="card-chunky" style={{ padding: '18px 22px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 180 }}>
           <LuSearch size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#aaa' }} />
-          <input className="inp" placeholder="Buscar por cliente, fecha, local..." value={search}
+          <input className="inp" placeholder="Buscar por cliente, encargado, fecha, local..." value={search}
             onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 36 }} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -120,6 +125,7 @@ export default function ReservasPage() {
                 <tr>
                   <th>#</th>
                   <th>Cliente</th>
+                  <th>Encargado</th>
                   <th>Fecha</th>
                   <th>Sucursal</th>
                   <th>Estado</th>
@@ -137,6 +143,9 @@ export default function ReservasPage() {
                     </td>
                     <td style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600 }}>
                       {getNombreCliente(r)}
+                    </td>
+                    <td style={{ fontFamily: "'Poppins', sans-serif" }}>
+                      {getNombreEmpleado(r)}
                     </td>
                     <td style={{ fontFamily: "'Poppins', sans-serif" }}>{r.fechaReserva ?? '—'}</td>
                     <td style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13 }}>
@@ -174,7 +183,7 @@ export default function ReservasPage() {
         </div>
       </div>
 
-      {/* ── Modal reserva presencial (walk-in) ── */}
+      {/* ── Modal nueva reserva (búsqueda por DNI, servicio, fecha/hora, sede, estilista, asiento) ── */}
       {presencial && (
         <ReservaPresencialModal
           onClose={() => setPresencial(false)}
@@ -182,14 +191,14 @@ export default function ReservasPage() {
         />
       )}
 
-      {/* ── Modal ── */}
+      {/* ── Modal editar reserva ── */}
       {modal && (
         <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) closeModal() }}>
           <div className="modal-box" style={{ maxWidth: 540 }}>
             <div className="modal-header">
               <h2 style={{ fontFamily: "'Fredoka One', cursive", fontSize: 22, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <LuCalendar size={20} color="var(--green)" />
-                {editing ? 'Editar Reserva' : 'Nueva Reserva'}
+                Editar Reserva
               </h2>
               <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', display: 'flex', alignItems: 'center' }}>
                 <LuX size={22} />
@@ -212,16 +221,22 @@ function ReservaForm({ initial, onClose, onSaved }) {
     local:         initial?.local         ?? '',
     estado:        initial?.estado        ?? 'Pendiente',
     observaciones: initial?.observaciones ?? '',
+    idEmpleado:    initial?.empleado?.idEmpleado ?? '',
   })
   const f = k => e => setForm(p => ({ ...p, [k]: e.target.value }))
 
+  const { data: empleados = [] } = useQuery({
+    queryKey: ['empleados-activos'],
+    queryFn: () => empleadosApi.getAll().then(r => (r.data.data ?? []).filter(e => e.estado === 'Activo')),
+  })
+
   const handleSave = async () => {
     try {
-      if (initial) await reservasApi.update(initial.idReserva, form)
-      else await reservasApi.create(form)
-      toast.success(initial ? 'Reserva actualizada' : 'Reserva creada')
+      const payload = { ...form, idEmpleado: form.idEmpleado ? Number(form.idEmpleado) : null }
+      await reservasApi.update(initial.idReserva, payload)
+      toast.success('Reserva actualizada')
       onSaved()
-    } catch { toast.error('Error al guardar') }
+    } catch (err) { toast.error(err.response?.data?.message || 'Error al guardar') }
   }
 
   return (
@@ -235,6 +250,17 @@ function ReservaForm({ initial, onClose, onSaved }) {
         <select className="inp" value={form.local} onChange={f('local')}>
           <option value="">— Sin asignar —</option>
           {SUCURSALES.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className="inp-label">Encargado (estilista)</label>
+        <select className="inp" value={form.idEmpleado} onChange={f('idEmpleado')}>
+          <option value="">— Sin cambio —</option>
+          {empleados.map(e => {
+            const u = e.usuario
+            const nombre = u ? `${u.nombres ?? ''} ${u.apellidos ?? ''}`.trim() : `Empleado #${e.idEmpleado}`
+            return <option key={e.idEmpleado} value={e.idEmpleado}>{nombre}{e.especialidad ? ` · ${e.especialidad}` : ''}</option>
+          })}
         </select>
       </div>
       <div>

@@ -3,6 +3,9 @@ package com.safarikids.controller;
 import com.safarikids.dto.ApiResponse;
 import com.safarikids.model.*;
 import com.safarikids.repository.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -88,7 +91,7 @@ public class PagoController {
 
     @Transactional
     @PostMapping("/procesar")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> procesarPago(@RequestBody ProcesarPagoRequest req) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> procesarPago(@Valid @RequestBody ProcesarPagoRequest req) {
         Reserva reserva = reservaRepo.findById(req.getIdReserva())
             .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
 
@@ -253,7 +256,9 @@ public class PagoController {
 
     @Data
     public static class ProcesarPagoRequest {
+        @NotNull(message = "La reserva es obligatoria")
         private Integer idReserva;
+        @NotBlank(message = "El método de pago es obligatorio")
         private String  metodoPago;
         private String  codigoPromocion;
         private String  ultimosDigitosTarjeta;

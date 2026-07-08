@@ -70,13 +70,14 @@ export default function EmpleadoReservas() {
           </p>
         </div>
         <button className="btn btn-g" style={{ padding: '10px 20px', fontSize: 14, gap: 8 }} onClick={() => setPresencial(true)}>
-          <LuUserPlus size={18} /> Reserva presencial
+          <LuUserPlus size={18} /> Nueva Reserva
         </button>
       </div>
 
-      {/* ── Modal reserva presencial (walk-in) ── */}
+      {/* ── Modal nueva reserva (queda a tu sede y a ti como encargado) ── */}
       {presencial && (
         <ReservaPresencialModal
+          restrictToSelf
           onClose={() => setPresencial(false)}
           onSaved={() => qc.invalidateQueries(['mis-asignadas'])}
         />

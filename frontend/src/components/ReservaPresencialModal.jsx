@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { reservasApi } from '../api/reservas'
@@ -16,7 +16,9 @@ const nombreEstilista = (e) => {
   return `${u.nombres ?? ''} ${u.apellidos ?? ''}`.trim() || 'Estilista'
 }
 
-export default function ReservaPresencialModal({ onClose, onSaved }) {
+/** restrictToSelf: uso desde el panel de empleado — la reserva se crea para su propia
+ *  sede y con él mismo como encargado, sin poder elegir otra sede o estilista. */
+export default function ReservaPresencialModal({ onClose, onSaved, restrictToSelf = false }) {
   const hoy = new Date().toISOString().split('T')[0]
   const [form, setForm] = useState({
     dni: '', nombres: '', apellidos: '', telefono: '',
@@ -29,6 +31,18 @@ export default function ReservaPresencialModal({ onClose, onSaved }) {
   const [resultado, setResultado] = useState(null) // { codigoReserva, cuentaNueva }
 
   const set = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }))
+
+  const { data: miPerfil } = useQuery({
+    queryKey: ['empleado-me'],
+    queryFn: () => empleadosApi.me().then(r => r.data.data),
+    enabled: restrictToSelf,
+  })
+
+  useEffect(() => {
+    if (restrictToSelf && miPerfil) {
+      setForm(p => ({ ...p, local: miPerfil.sucursal ?? '', idEmpleado: String(miPerfil.idEmpleado) }))
+    }
+  }, [restrictToSelf, miPerfil])
 
   const { data: servicios = [] } = useQuery({
     queryKey: ['servicios-presencial'],
@@ -45,7 +59,7 @@ export default function ReservaPresencialModal({ onClose, onSaved }) {
   const { data: estilistas = [] } = useQuery({
     queryKey: ['estilistas-presencial', form.local],
     queryFn: () => empleadosApi.disponibles(form.local).then(r => r.data.data ?? []),
-    enabled: !!form.local,
+    enabled: !!form.local && !restrictToSelf,
   })
 
   const buscarPorDni = async () => {
@@ -199,21 +213,31 @@ export default function ReservaPresencialModal({ onClose, onSaved }) {
 
             <div>
               <label className="inp-label">Sede</label>
-              <select className="inp" value={form.local} onChange={e => setForm(p => ({ ...p, local: e.target.value, idEmpleado: '' }))}>
-                <option value="">Selecciona una sede…</option>
-                {SUCURSALES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+              {restrictToSelf ? (
+                <div className="inp" style={{ background: '#f5f0e8', color: '#666', display: 'flex', alignItems: 'center' }}>
+                  {form.local || 'Cargando…'}
+                </div>
+              ) : (
+                <select className="inp" value={form.local} onChange={e => setForm(p => ({ ...p, local: e.target.value, idEmpleado: '' }))}>
+                  <option value="">Selecciona una sede…</option>
+                  {SUCURSALES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              )}
             </div>
 
-            {form.local && (
-              <div>
-                <label className="inp-label">Estilista</label>
+            <div>
+              <label className="inp-label">Estilista</label>
+              {restrictToSelf ? (
+                <div className="inp" style={{ background: '#f5f0e8', color: '#666', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <LuUser size={15} /> {nombreEstilista(miPerfil)} (tú)
+                </div>
+              ) : form.local && (
                 <select className="inp" value={form.idEmpleado} onChange={set('idEmpleado')}>
                   <option value="">Cualquiera disponible</option>
                   {estilistas.map(e => <option key={e.idEmpleado} value={e.idEmpleado}>{nombreEstilista(e)}{e.especialidad ? ` · ${e.especialidad}` : ''}</option>)}
                 </select>
-              </div>
-            )}
+              )}
+            </div>
 
             <div>
               <label className="inp-label">Asiento <span style={{ color: '#bbb' }}>(opcional)</span></label>

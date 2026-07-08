@@ -3,6 +3,10 @@ package com.safarikids.controller;
 import com.safarikids.dto.ApiResponse;
 import com.safarikids.model.*;
 import com.safarikids.repository.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -91,7 +95,7 @@ public class ReservaController {
 
     @Transactional
     @PostMapping("/crear")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> crear(@RequestBody CrearReservaRequest req) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> crear(@Valid @RequestBody CrearReservaRequest req) {
         String correo = SecurityContextHolder.getContext().getAuthentication().getName();
         Usuario usuario = usuarioRepo.findByCorreo(correo)
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
@@ -111,10 +115,8 @@ public class ReservaController {
      *  una cuenta provisional que el cliente podrá reclamar luego desde la web con el mismo DNI. */
     @Transactional
     @PostMapping("/presencial")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> crearPresencial(@RequestBody PresencialReservaRequest req) {
-        String dni = req.getDni() == null ? null : req.getDni().trim();
-        if (dni == null || !dni.matches("\\d{8}"))
-            return ResponseEntity.badRequest().body(ApiResponse.error("El DNI debe tener 8 dígitos"));
+    public ResponseEntity<ApiResponse<Map<String, Object>>> crearPresencial(@Valid @RequestBody PresencialReservaRequest req) {
+        String dni = req.getDni().trim();
 
         String errHora = horarioYaPaso(req.getFecha(), req.getHoraInicio());
         if (errHora != null) return ResponseEntity.badRequest().body(ApiResponse.error(errHora));
@@ -274,15 +276,21 @@ public class ReservaController {
         return candidatos.get(new Random().nextInt(candidatos.size()));
     }
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<Reserva>> create(@RequestBody Reserva reserva) {
-        return ResponseEntity.ok(ApiResponse.ok("Reserva creada", repository.save(reserva)));
-    }
-
+    @Transactional
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Reserva>> update(@PathVariable Integer id, @RequestBody Reserva reserva) {
-        if (!repository.existsById(id)) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(ApiResponse.ok("Actualizada", repository.save(reserva)));
+    public ResponseEntity<ApiResponse<Reserva>> update(@PathVariable Integer id, @RequestBody ActualizarReservaRequest req) {
+        return repository.findById(id).map(existing -> {
+            if (req.getFechaReserva() != null) existing.setFechaReserva(req.getFechaReserva());
+            if (req.getLocal() != null) existing.setLocal(req.getLocal());
+            if (req.getEstado() != null) existing.setEstado(req.getEstado());
+            if (req.getObservaciones() != null) existing.setObservaciones(req.getObservaciones());
+            if (req.getIdEmpleado() != null) {
+                Empleado empleado = empleadoRepo.findById(req.getIdEmpleado())
+                    .orElseThrow(() -> new RuntimeException("Empleado no encontrado"));
+                existing.setEmpleado(empleado);
+            }
+            return ResponseEntity.ok(ApiResponse.ok("Actualizada", repository.save(existing)));
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     @Transactional
@@ -336,27 +344,46 @@ public class ReservaController {
 
     @Data
     public static class CrearReservaRequest {
+        @NotBlank(message = "La fecha es obligatoria")
         private String fecha;
+        @NotBlank(message = "La hora es obligatoria")
         private String horaInicio;
+        @NotNull(message = "El servicio es obligatorio")
         private Integer idServicio;
         private Integer idAsiento;
         private Integer idEmpleado;
+        @NotBlank(message = "La sede es obligatoria")
         private String local;
         private String observaciones;
     }
 
     @Data
     public static class PresencialReservaRequest {
+        @NotBlank(message = "El DNI debe tener 8 dígitos")
+        @Pattern(regexp = "\\d{8}", message = "El DNI debe tener 8 dígitos")
         private String dni;
         private String nombres;
         private String apellidos;
         private String telefono;
+        @NotBlank(message = "La fecha es obligatoria")
         private String fecha;
+        @NotBlank(message = "La hora es obligatoria")
         private String horaInicio;
+        @NotNull(message = "El servicio es obligatorio")
         private Integer idServicio;
         private Integer idAsiento;
         private Integer idEmpleado;
+        @NotBlank(message = "La sede es obligatoria")
         private String local;
         private String observaciones;
+    }
+
+    @Data
+    public static class ActualizarReservaRequest {
+        private LocalDate fechaReserva;
+        private String local;
+        private Reserva.EstadoReserva estado;
+        private String observaciones;
+        private Integer idEmpleado;
     }
 }

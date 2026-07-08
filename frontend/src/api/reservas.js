@@ -10,7 +10,6 @@ export const reservasApi = {
   misAsignadas:  ()         => api.get(BASE + '/mis-asignadas'),
   cancelar:      (id)       => api.patch(BASE + '/' + id + '/cancelar'),
   confirmar:     (id)       => api.patch(BASE + '/' + id + '/confirmar'),
-  create:        (data)     => api.post(BASE, data),
   update:        (id, data) => api.put(BASE + '/' + id, data),
   remove:        (id)       => api.delete(BASE + '/' + id),
 }
