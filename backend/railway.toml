@@ -3,6 +3,6 @@ builder = "NIXPACKS"
 buildCommand = "mvn clean package -DskipTests"
 
 [deploy]
-startCommand = "java -jar target/safari-kids-backend-1.0.0.jar"
+startCommand = "java -Xmx256m -Xss512k -XX:MaxMetaspaceSize=150m -XX:ReservedCodeCacheSize=64m -XX:+UseSerialGC -jar target/safari-kids-backend-1.0.0.jar"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
