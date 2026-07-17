@@ -1,0 +1,4 @@
+target/
+railway.toml
+# Credenciales locales: no deben quedar dentro de la imagen
+src/main/resources/application-local.properties

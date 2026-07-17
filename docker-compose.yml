@@ -1,0 +1,48 @@
+services:
+  # Base de datos: PostgreSQL, igual que en Railway (el perfil default del
+  # backend ya apunta a PostgreSQL, así el entorno Docker replica producción).
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: safari_kids
+      POSTGRES_USER: safari
+      POSTGRES_PASSWORD: safari1234
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U safari -d safari_kids"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/safari_kids
+      SPRING_DATASOURCE_USERNAME: safari
+      SPRING_DATASOURCE_PASSWORD: safari1234
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
+      FRONTEND_URL: http://localhost:3000
+      # Opcionales (correo/telegram); si están vacíos la app los omite sin fallar:
+      # MAIL_USERNAME: tu-correo@gmail.com
+      # MAIL_PASSWORD: contraseña-de-aplicacion
+      # BREVO_API_KEY: xkeysib-...
+      # TELEGRAM_BOT_TOKEN: ...
+      # TELEGRAM_CHAT_ID: ...
+    ports:
+      # 8081 en el host (el 8080 suele estar ocupado por el backend en desarrollo);
+      # dentro de la red de Docker sigue siendo backend:8080.
+      - "8081:8080"
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  db_data:
